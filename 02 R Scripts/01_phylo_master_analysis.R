@@ -14,22 +14,32 @@
 library(readr)
 library("V.PhyloMaker2")
 library(writexl)
+library(ggplot2)
 library(picante)
 library(ape)
 library(vegan)
 library(readxl)
 library(tidyverse)
 library(corrplot)
-library(lmerTest) #MODELO MISTO
+library(lmerTest) # LMM
 library(MuMIn) #AICc
 library(car)
+library(broom.mixed)
+library(grid)  # unit()
+library(sjPlot)
+library(lme4)
+library(ggeffects)   # ggpredict
+library(patchwork)
+library(effects)
+library(PCPS)
+
 
 # Install V.PhyloMaker2
 # install.packages("devtools")
 # devtools::install_github("jinyizju/V.PhyloMaker2")
 
 # input the sample species list
-example <- read_csv("02 Datasets/01 raw_data/filogenia_total.csv")
+example <- read_csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/filogenia_total.csv")
 View(example)
 
 ### generate a phylogeny for the sample species list
@@ -41,7 +51,7 @@ summary(tree_ok)
 
 plot.phylo(tree_ok, type = "tidy", show.tip.label = TRUE, show.node.label = FALSE,edge.color = "gray",edge.width = 1,tip.color = "black")
 
-png("arvore_filog.png",width = 12, height = 10, units = "in", res = 300)
+png("~/01 Masters_LA/06 Figures/03 Plot_phylo_trees/arvore_filog.jpeg",width = 12, height = 10, units = "in", res = 300)
 plot.phylo(tree_ok, 
            type = "tidy", 
            show.tip.label = TRUE, 
@@ -68,7 +78,7 @@ View(pdis.ord)
 ### Importing the community matrix
 ## comunidade_pd uses Basal Area, and not abundance; basal area is used in the calculation of Biomass, so it's prefereable to use Abundance
 
-comunidade <- read.csv("02 Datasets/01 raw_data/comunidade_abund.csv",
+comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund.csv",
   row.names = 1,
   header = TRUE,
   sep = ";")
@@ -80,7 +90,7 @@ colnames(comunidade)==colnames(pdis.ord) # checking if they match
 
 pd.faith <- pd(comunidade,tree_ok,include.root = FALSE)
 view(pd.faith)
-write_xlsx(pd.faith, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/PD_Faith.xlsx")
+write_xlsx(pd.faith, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PD_Faith.xlsx")
 
 pd_only <- pd.faith %>%
   tibble::rownames_to_column(var = "site") %>%
@@ -93,7 +103,7 @@ mpd_df <- tibble::tibble(
   site = rownames(comunidade),
   mpd  = as.numeric(mpd(comunidade, pdis.ord, abundance.weighted = TRUE))
 )
-write_xlsx(mpd_df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/MPD.xlsx")
+write_xlsx(mpd_df, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/MPD.xlsx")
 
 # MNTD (species are more broadly or finely spaced in a community compared to another?)
 
@@ -102,7 +112,7 @@ mntd_df <- tibble::tibble(
   mntd = as.numeric(mntd(comunidade, pdis.ord, abundance.weighted = TRUE))
 )
 
-write_xlsx(mntd_df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/MNTD.xlsx")
+write_xlsx(mntd_df, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/MNTD.xlsx")
 
 ### Standardized effect size of PD ##### Runs = 99 # ape
 # tree_clean <- drop.tip(tree_ok, tip = which(is.na(tree_ok$tip.label))) #OPTIONAL
@@ -110,7 +120,7 @@ write_xlsx(mntd_df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_dat
 ses_pd <- ses.pd(comunidade, tree_ok, null.model="richness", runs = 999,iterations = 1000,include.root = FALSE)
 ses_pd <- as.data.frame(ses_pd)
 
-write_xlsx(ses_pd, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/ses_pd.xlsx")
+write_xlsx(ses_pd, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/ses_pd.xlsx")
 
 ses_pd <- ses_pd |> 
   tibble::rownames_to_column(var = "site")
@@ -124,7 +134,7 @@ view(sespd_only)
 ses_mpd <- ses.mpd(comunidade, pdis.ord,null.model="richness")
 ses_mpd <- as.data.frame(ses_mpd)
 
-write_xlsx(ses_mpd, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/ses_mpd.xlsx")
+write_xlsx(ses_mpd, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/ses_mpd.xlsx")
 
 ses_mpd <- ses_mpd |> 
   tibble::rownames_to_column(var = "site")
@@ -137,7 +147,7 @@ view(sesmpd_only)
 
 ses_mntd <- ses.mntd(comunidade, pdis.ord,null.model="richness")
 ses_mntd <- as.data.frame(ses_mntd)
-write_xlsx(ses_mntd, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/ses_mntd.xlsx")
+write_xlsx(ses_mntd, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/ses_mntd.xlsx")
 
 ses_mntd <- ses_mntd |> 
   tibble::rownames_to_column(var = "site")
@@ -173,22 +183,22 @@ view(psd_df)
 ### OPTIONAL
 # Phylogenetic Species Richness: PSV * SR
 PSR <- psr(comunidade,tree_ok)
-write_xlsx(PSR, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/PSR.xlsx")
+write_xlsx(PSR, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PSR.xlsx")
 
 # Phylogenetic Species Evenness: is the metric PSV modified to incorporate relative species abundances
 PSE <- pse(comunidade,tree_ok)
-write_xlsx(PSE, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/PSE.xlsx")
+write_xlsx(PSE, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PSE.xlsx")
 
 # Phylogenetic species clustering: is a metric of the branch tip clustering of species across a sample’s phylogeny
 
 PSC <- psc(comunidade,tree_ok)
-write_xlsx(PSC, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/PSC.xlsx")
+write_xlsx(PSC, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PSC.xlsx")
 
 ###########################
 ### TAXONOMIC DIVERSITY ###
 ###########################
 
-comunidade_diversity <- read.csv("02 Datasets/01 raw_data/comunidade_diversity.csv",
+comunidade_diversity <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/comunidade_diversity.csv",
                                  row.names = 1,
                                  header = TRUE,
                                  sep = ";")
@@ -197,7 +207,7 @@ unbias_simp_df <- tibble::tibble(
   site = rownames(comunidade_diversity),
   unbias_simp = as.numeric(simpson.unb(comunidade_diversity))
 )
-write_xlsx(unbias.simp.df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/Unbias_Simp.xlsx")
+write_xlsx(unbias.simp.df, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/Unbias_Simp.xlsx")
 
 #Shannon
 shannon_df <- tibble::tibble(
@@ -205,7 +215,7 @@ shannon_df <- tibble::tibble(
   shannon = as.numeric(diversity(comunidade_diversity, index = "shannon"))
 )
 
-write_xlsx(shannon_df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/shannon.xlsx")
+write_xlsx(shannon_df, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/shannon.xlsx")
 
 ### Saving diversity data with community weighted by abundance
 
@@ -221,27 +231,27 @@ data_diversity <- pd_only %>%
 
 write_csv(
   data_diversity,
-  "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/data_diversity.csv"
+  "01 Datasets/02_processed_data/data_diversity.csv"
 )
 
 write_xlsx(data_diversity,
-           "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/data_diversity.xlsx")
+           "01 Datasets/02_processed_data/data_diversity.xlsx")
 
 ########################
 ### DATA EXPLORATION ###
 ########################
 
-dadosmisto <- read.csv("02 Datasets/01 raw_data/dadosmisto.csv",
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                                  header = TRUE,
                                  sep = ";")
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
-png("~/01 Masters_LA/MASTERS-THESIS/02 Datasets/04 exploratory_plots/hist_biomass.png", width = 800, height = 600)
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/hist_biomass.png", width = 800, height = 600)
 hist(dadosmisto$biomassa_z_kg, main="Histograma Biomassa", xlab="Valores", col="blue", border="black")
 dev.off()
 
-png("~/01 Masters_LA/MASTERS-THESIS/02 Datasets/04 exploratory_plots/hist_logprodut.png", width = 800, height = 600)
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/hist_logprodut.png", width = 800, height = 600)
 hist(dadosmisto$log_produt, main="Histograma Log Produtividade", xlab="Valores", col="green", border="black")
 dev.off()
 
@@ -250,14 +260,14 @@ dev.off()
 shap_biomass <- shapiro.test(dadosmisto$biomassa_z_kg) # NOT NORMAL
 dados_transformados <- log(dadosmisto$biomassa_z_kg + 1)  # Add 1 to avoid log(0)
 dados_transformados.df <- as.data.frame(dados_transformados)
-write_xlsx(dados_transformados.df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/logbiomassa.xlsx")
+write_xlsx(dados_transformados.df, "01 Datasets/02_processed_data/logbiomassa.xlsx")
 shapiro.test(dados_transformados) 
 
 shap_produt <- shapiro.test(dadosmisto$produt_z_g.ano) # NÃO É NORMAL
 dados_transformados <- log(dadosmisto$produt_z_g.ano + 1)  # Adicione 1 para evitar log(0)
 dados_transformados.df <- as.data.frame(dados_transformados)
 shapiro.test(dados_transformados) 
-write_xlsx(dados_transformados.df, "~/01 Masters_LA/MASTERS-THESIS/02 Datasets/02 processed_data/logprodut.xlsx")
+write_xlsx(dados_transformados.df, "01 Datasets/02_processed_data/logprodut.xlsx")
 
 
 # DENSITY
@@ -267,14 +277,14 @@ plot(density(dadosmisto$log_produt), main="Densidade dos Dados")
 
 # CHECKING FOR OUTLIERS
 
-png("~/01 Masters_LA/MASTERS-THESIS/02 Datasets/04 exploratory_plots/boxplot_LogBiomassa.png",
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/boxplot_LogBiomassa.png",
     width = 800, height = 600)
 boxplot(dadosmisto$log_biomass, 
         main = "Boxplot - Log Biomass (kg)",
         col = "#8B008B")
 dev.off()
 
-png("~/01 Masters_LA/MASTERS-THESIS/02 Datasets/04 exploratory_plots/boxplot_LogProdutividade.png",
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/boxplot_LogProdutividade.png",
     width = 800, height = 600)
 boxplot(dadosmisto$log_produt, 
         main = "Boxplot - Productivity (g/cm²/year)", 
@@ -285,7 +295,7 @@ dev.off()
 
 # tidyverse
 
-dadosmisto <- read.csv("02 Datasets/01 raw_data/dadosmisto.csv",
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE,
                        sep = ";")
 dadosmisto1 <- dadosmisto[-c(1:7), ] # WITHOUT CSA
@@ -315,7 +325,7 @@ print(cor_matrix_x)
 
 # Plot
 
-png("~/01 Masters_LA/MASTERS-THESIS/02 Datasets/04 exploratory_plots/matriz.cor_environmental_withoutCSA.png", width = 1200, height = 800, res = 150)
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/matriz.cor_environmental_withoutCSA.png", width = 1200, height = 800, res = 150)
 corrplot(cor_matrix_x, method = "circle", type = "upper", 
          tl.col = "black", tl.cex = 0.8)
 dev.off()
@@ -326,7 +336,7 @@ dev.off()
 ### LINEAR MIXED MODEL ###
 ##########################
 
-dadosmisto <- read.csv("02 Datasets/01 raw_data/dadosmisto.csv",
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE,
                        sep = ";")
 
@@ -443,44 +453,45 @@ anova(modelo_nulo, c1)   # P-value = 0.0005941 ***
 r.squaredGLMM(c1)        # R²c = 0.5572206
 AICc(c1)                 # 69.51542
 
-################
-### GRÁFICOS ###
-################
+#############
+### PLOTS ###
+#############
 
-## ==========================================================
-##  Coefplot do modelo m11 — estilo Restoration Ecology
-## ==========================================================
+## =============== ##
+##  Coefplot m11   ##  
+## =============== ##
 
-library(ggplot2)
-library(broom.mixed)
-library(grid)  # para unit()
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
+                       header = TRUE,
+                       sep = ";")
 
+dadosmisto1 <- dadosmisto[-c(1:7), ]
 
-## 1) Padronizar as variáveis (média = 0, desvio padrão = 1)
+## 1) Standardizing variables (mean = 0, sd = 1)
 
 dados_std <- dadosmisto1
 dados_std$c.n_soloid <- scale(dadosmisto1$c.n_soloid)
-dados_std$SR         <- scale(dadosmisto1$SR)
+dados_std$SR         <- scale(dadosmisto1$sr)
 dados_std$silte      <- scale(dadosmisto1$silte)
-dados_std$pcps1ab    <- scale(dadosmisto1$pcps1ab)
+dados_std$pcps1ab    <- scale(dadosmisto1$pcps1)
 
 
-## 2) Rodar o modelo padronizado (igual ao m11 original)
+## 2) Run standardized model
 
-m11_std <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
+m12_std <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
                 data = dados_std, REML = FALSE)
 
-summary(m11_std)
+summary(m12_std)
 
-## 3) Extrair coeficientes + IC95% do modelo padronizado
+## 3) Extract coefficients + IC95% of the stand. model
 coef_df <- tidy(m11_std, effects = "fixed", conf.int = TRUE)
 
-## 4) Remover intercepto e criar coluna de significância
+## 4) Remove intercept and add significant p-value
 coef_df_sem_intercepto <- subset(coef_df, term != "(Intercept)")
 coef_df_sem_intercepto$significativo <- ifelse(coef_df_sem_intercepto$p.value < 0.05,
                                                "Significant", "Non-significant")
 
-## 5) Rótulos e ordem desejada (SR topo → PCPS1 → C:N → Silt)
+## 5) Labels and desirable order (SR → PCPS1 → C:N → Silt)
 coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
                                       levels = c("SR","pcps1ab","c.n_soloid","silte"),
                                       labels = c("Species richness (SR)",
@@ -511,8 +522,8 @@ p <- ggplot(coef_df_sem_intercepto,
        y = "Predictors")
 p
 ## 7) Salvar sem cortar nada
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-ggsave("graf_coefplot_msel.jpg",
+
+ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_msel.jpeg",
        plot = p, width = 14, height = 9, units = "cm",
        dpi = 600, bg = "white", limitsize = FALSE)
 
@@ -522,28 +533,27 @@ ggsave("graf_coefplot_msel.jpg",
 ### PLOT GLM ###
 ################
 
-library(writexl)
-library(readxl)
-library(tidyverse)
-library(ggplot2)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-dadosmisto <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dadosmisto.xlsx")
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
+                       header = TRUE,
+                       sep = ";")
+
+dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 
 ## SR 
 
-fit <- lm(log_produt ~ SR, data = dadosmisto1)
+fit <- lm(log_produt ~ sr, data = dadosmisto1)
 summary(fit)
 
 r2  <- summary(fit)$r.squared
-p   <- coef(summary(fit))["SR", "Pr(>|t|)"]
+p   <- coef(summary(fit))["sr", "Pr(>|t|)"]
 
 subtxt <- sprintf("R\u00B2 = %.2f; p = %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
 
-g <- ggplot(dadosmisto1, aes(SR, log_produt)) +
+g <- ggplot(dadosmisto1, aes(sr, log_produt)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "yellow") +
   labs(
@@ -554,7 +564,7 @@ g <- ggplot(dadosmisto1, aes(SR, log_produt)) +
   theme_minimal(base_size = 11)
 g
 
-ggsave("logprodut_SR.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_SR.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 
 
@@ -586,7 +596,7 @@ g <- ggplot(dadosmisto1, aes(silte, log_produt)) +
 
 g
 
-ggsave("logprodut_silt.jpeg", g,
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_silt.jpeg", g,
        width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 ## Soil C:N
@@ -617,13 +627,13 @@ g <- ggplot(dadosmisto1, aes(c.n_soloid, log_produt)) +
 
 g
 
-ggsave("logprodut_c.n_soloid.jpeg", g,
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_c.n_soloid.jpeg", g,
        width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 
 ## PCPS1
 
-fit <- lm(log_produt ~ pcps1ab, data = dadosmisto1)
+fit <- lm(log_produt ~ pcps1, data = dadosmisto1)
 s   <- summary(fit)
 
 r2  <- s$r.squared
@@ -636,7 +646,7 @@ subtxt <- sprintf("R\u00B2 = %.2f; p= %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
-g <- ggplot(dadosmisto1, aes(pcps1ab, log_produt)) +
+g <- ggplot(dadosmisto1, aes(pcps1, log_produt)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "blue") +
   labs(
@@ -649,18 +659,16 @@ g <- ggplot(dadosmisto1, aes(pcps1ab, log_produt)) +
 
 g
 
-ggsave("logprodut_pcps1.jpeg", g,
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_pcps1.jpeg", g,
        width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 
 ### FACET WRAP ###
-library(tidyverse)
-
 
 #SR
 
 g <- dadosmisto1 %>%
-  ggplot(aes(SR, log_produt)) +
+  ggplot(aes(sr, log_produt)) +
   geom_point(size = 3, alpha = 0.5) + 
   geom_smooth(method = "lm", se = FALSE) + 
   facet_wrap(~site) +
@@ -668,170 +676,46 @@ g <- dadosmisto1 %>%
        y = expression("Biomass accumulation (g m"^-2*" year"^-1*")")) +
   theme_bw(base_size = 11)
 
-ggsave("facetwrap_SR.jpeg",
+ggsave("~/01 Masters_LA/06 Figures/02 plots/facetwrap_SR.jpeg",
        plot = g,
        width = 13, height = 10, units = "cm", dpi = 600, bg = "white")
 
-# PCPS1
-
-g <- dadosmisto1 %>%
-  ggplot(aes(pcps1ab, log_produt)) +
-  geom_point(size = 3, alpha = 0.5) + 
-  geom_smooth(method = "lm", se = FALSE) + 
-  facet_wrap(~site) +
-  labs(x = "PCPS Axis 1",
-       y = expression("Biomass accumulation (g m"^-2*" year"^-1*")")) +
-  theme_bw(base_size = 11)
-
-ggsave("facetwrap_pcps1.jpeg",
-       plot = g,
-       width = 13, height = 10, units = "cm", dpi = 600, bg = "white")
-
-
-
-##################################
-### GRÁFICOS MODELOS MÚLTIPLOS ###
-##################################
-
-install.packages("sjPlot")
-library(ggplot2)
-library(sjPlot)
-
-# Gerando gráficos de efeitos parciais para o modelo
-plot_model(M_PSE_ppt_decliv_shan, type = "eff", terms = c("PSE", "ppt", "declividade", "shannon"))
-
-# Gerando gráficos de efeitos parciais para o modelo
-plot_model(M_PSE_ppt_decliv, type = "eff", terms = c("PSE", "ppt", "declividade"))
-
-
-#############################
-### GRÁFICOS MODELO MISTO ###
-#############################
 
 ############################
 ### Plot Partial Effects ###
 ############################
 
-# Pacotes
-library(lme4)
-library(lmerTest)    # p-values para os efeitos fixos
-library(ggeffects)   # efeitos marginais (ggpredict)
-library(ggplot2)
-library(patchwork)   # montar os painéis
-
-# --- Model -----------------------------------------------------------
+# -------
+# Model
+# -------
 m12 <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
             data = dadosmisto1, REML = FALSE)
 
-# p-values dos efeitos fixos (para mostrar no subtítulo)
+# p-values
 pv <- summary(m12)$coefficients[, "Pr(>|t|)"]
-p_txt <- sprintf("p(c.n_soloid)=%.3f | p(SR)=%.3f | p(pcps1ab)=%.3f",
-                 pv["c.n_soloid"], pv["SR"], pv["pcps1ab"])
+p_txt_en <- sprintf("p(C:N)=%.3f | p(sr)=%.3f | p(PCPS1)=%.3f",
+                    pv["c.n_soloid"], pv["sr"], pv["pcps1"])
 
-# Efeitos marginais no nível populacional (sem efeitos aleatórios)
-eff_c   <- ggpredict(m12, terms = "c.n_soloid", type = "fixed")
-eff_sr  <- ggpredict(m12, terms = "SR",         type = "fixed")
-eff_pc1 <- ggpredict(m12, terms = "pcps1ab",    type = "fixed")
-
-# --- Função para plotar pontos + linha predita (escala log) -------------------
-plot_log_pts <- function(eff, xvar, xlab){
-  ggplot() +
-    # pontos observados
-    geom_point(data = dadosmisto1, aes_string(x = xvar, y = "log_produt"),
-               color = "gray40", size = 1.8, alpha = 0.6) +
-    # faixa de confiança do modelo
-    geom_ribbon(data = eff, aes(x = x, ymin = conf.low, ymax = conf.high),
-                fill = "skyblue3", alpha = 0.25) +
-    # linha predita
-    geom_line(data = eff, aes(x = x, y = predicted),
-              color = "blue4", linewidth = 1.1) +
-    labs(x = xlab, y = "Predito: log(produt)") +
-    theme_minimal(base_size = 12)
-}
-
-# --- Função para plotar pontos + linha predita (escala original) --------------
-plot_orig_pts <- function(eff, xvar, xlab){
-  ggplot() +
-    geom_point(data = dadosmisto1,
-               aes_string(x = xvar, y = "exp(log_produt)"),
-               color = "gray40", size = 1.8, alpha = 0.6) +
-    geom_ribbon(data = eff,
-                aes(x = x, ymin = exp(conf.low), ymax = exp(conf.high)),
-                fill = "skyblue3", alpha = 0.25) +
-    geom_line(data = eff, aes(x = x, y = exp(predicted)),
-              color = "blue4", linewidth = 1.1) +
-    labs(x = xlab, y = "Predito: produt (escala original)") +
-    theme_minimal(base_size = 12)
-}
-
-# --- Montar painéis -----------------------------------------------------------
-g1_log <- plot_log_pts(eff_c,   "c.n_soloid", "C:N do solo (c.n_soloid)")
-g2_log <- plot_log_pts(eff_sr,  "SR",         "Riqueza de espécies (SR)")
-g3_log <- plot_log_pts(eff_pc1, "pcps1ab",    "PCPS1 (pcps1ab)")
-
-fig_log <- (g1_log | g2_log | g3_log) +
-  plot_annotation(title = "Efeitos marginais com dados observados — escala log",
-                  subtitle = p_txt)
-
-# --- Também pode fazer na escala original -------------------------------------
-g1_or <- plot_orig_pts(eff_c,   "c.n_soloid", "Soil C:N ratio")
-g2_or <- plot_orig_pts(eff_sr,  "SR",         "Species Richness (SR)")
-g3_or <- plot_orig_pts(eff_pc1, "pcps1ab",    "First PCPS axis")
-
-fig_or <- (g1_or | g2_or | g3_or) +
-  plot_annotation(title = "Partial effects with observed points — original scale",
-                  subtitle = p_txt)
-
-fig_or
-
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-ggsave("fig_m12_efeitos_original_pts.png", fig_or, width = 11, height = 4.2, dpi = 300)
-
-
-##########################################
-##########################################
-##########################################
-
-
-# Pacotes
-library(lme4)
-library(lmerTest)
-library(ggeffects)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
-
-# --------------------------------------------------------------------
-# Modelo (usa nomes originais do seu data frame)
-# --------------------------------------------------------------------
-m12 <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
-            data = dadosmisto1, REML = FALSE)
-
-# p-values (para subtítulo)
-pv <- summary(m12)$coefficients[, "Pr(>|t|)"]
-p_txt_en <- sprintf("p(C:N)=%.3f | p(SR)=%.3f | p(PCPS1)=%.3f",
-                    pv["c.n_soloid"], pv["SR"], pv["pcps1ab"])
-
-# --------------------------------------------------------------------
-# Data frame para PLOT com nomes em inglês (modelo continua com originais)
-# --------------------------------------------------------------------
+# ------------------------------
+# Data frame with english names
+# ------------------------------
 dados_plot <- dadosmisto1 %>%
   rename(
     soil_C_N_ratio      = c.n_soloid,
-    species_richness_SR = SR,
-    PCPS1               = pcps1ab,
+    species_richness_SR = sr,
+    PCPS1               = pcps1,
     log_productivity    = log_produt
   )
 
 # --------------------------------------------------------------------
-# Efeitos marginais (somente efeitos fixos)
+# Marginal Effects (only fixed)
 # --------------------------------------------------------------------
 eff_c   <- ggpredict(m12, terms = "c.n_soloid", type = "fixed")
-eff_sr  <- ggpredict(m12, terms = "SR",         type = "fixed")
-eff_pc1 <- ggpredict(m12, terms = "pcps1ab",    type = "fixed")
+eff_sr  <- ggpredict(m12, terms = "sr",         type = "fixed")
+eff_pc1 <- ggpredict(m12, terms = "pcps1",    type = "fixed")
 
 # --------------------------------------------------------------------
-# Função de plot (escala original) com pontos + linha + CI
+# Plot with points + line + CI
 # --------------------------------------------------------------------
 base_sz <- 11
 thin_margin <- margin(4, 6, 4, 6)
@@ -851,140 +735,59 @@ plot_orig_pts <- function(eff, df, xvar, xlab){
     theme(plot.margin = thin_margin)
 }
 
-# Gráficos individuais
+# Individual plots
 g_cn   <- plot_orig_pts(eff_c,   dados_plot, "soil_C_N_ratio",      "Soil C:N ratio")
 g_sr   <- plot_orig_pts(eff_sr,  dados_plot, "species_richness_SR", "Species Richness (SR)") +
-  ylab(NULL)  # remove o y-label do painel da direita
+  ylab(NULL)  # remove y-label from the right painel
 g_pcps <- plot_orig_pts(eff_pc1, dados_plot, "PCPS1",               "First PCPS axis")
 
-library(patchwork)
-
-# design: A (top-left), B (top-right); C (bottom-left), vazio à direita
+# design: A (top-left), B (top-right); C (bottom-left), empty right
 design <- "
 AB
 C.
 "
 
-# MAPEIE PELOS NOMES!  👉 A=g_cn, B=g_sr, C=g_pcps
+#
 fig_or <- wrap_plots(
-  A = g_cn,        # (a) Soil C:N  — topo esquerdo
-  B = g_sr,        # (b) SR        — topo direito
-  C = g_pcps,      # (c) PCPS1     — embaixo esquerdo
+  A = g_cn,        
+  B = g_sr,        
+  C = g_pcps,      
   design = design,
-  heights = c(1, 0.55)   # deixa a linha de baixo mais baixa
+  heights = c(1, 0.55)   
 ) + plot_annotation(
   title = "Partial effects with observed points — original scale",
   subtitle = p_txt_en,
-  tag_levels = "a",        # gera (a), (b), (c) exatamente nessa ordem A,B,C
+  tag_levels = "a",        
   tag_prefix = "(", tag_suffix = ")"
 )
 
 fig_or
-ggsave("fig_m12_partial_effects_original_EN.png", fig_or, width = 11, height = 6.4, dpi = 300)
-
-### PREDICT ####
-
-# Carregue os pacotes
-library(effects)
-library(ggeffects)
-
-# Gráfico de efeitos preditivos para PSE e SR
-eff <- effect("silt*SR", misto1)
-plot(eff)
-
-library(ggplot2)
-
-# Gerar o gráfico com ggpredict
-pred <- ggpredict(misto1, terms = c("SR", "silt"))
-plot(pred)
-
-# Criar o gráfico
-grafico <- plot(pred) +
-  labs(title= "Predicted values of Productivity",x = "SR", y = "log Productivity (g/m²/ano)") +
-  theme_minimal()
-
-plot(grafico)
-
-###
-# Salvar o gráfico como PNG
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-ggsave("Predict_SR_silte.png", plot = grafico, width = 15, height = 10, units = "cm",dpi = 300,bg = "white")
-
-#### SR e PCPS
-
-library(ggplot2)
-library(ggeffects)
-
-# Gerar previsões para a interação
-pred_interacao <- ggpredict(model, terms = c("SR", "pcps1ab [-1, 0, 1]"))
-
-# Plotar
-ggplot(pred_interacao, aes(x = x, y = predicted, color = group)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
-  labs(x = "Riqueza de Espécies (SR)", 
-       y = "Log(Produtividade)", 
-       color = "PCPS1",
-       title = "Efeito da riqueza sobre a produtividade em diferentes contextos filogenéticos") +
-  theme_bw()
-
-ggpredict(model, terms = c("pcps1ab", "SR [5, 10, 15]")) |> plot()
-
-library(ggeffects)
-library(ggplot2)
-
-# Gerar previsões para SR (5 a 25) e pcps1ab (baixo, médio, alto)
-pred_data <- ggpredict(model, terms = c("SR [5:25 by=5]", "pcps1ab [-0.5, 0, 0.5]"))
-
-# Plotar
-ggplot(pred_data, aes(x = x, y = predicted, color = group)) +
-  geom_line(linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = group), alpha = 0.2) +
-  labs(
-    x = "Riqueza de Espécies (SR)", 
-    y = "Log(Produtividade)", 
-    color = "PCPS1",
-    fill = "PCPS1",
-    title = "Efeito não-linear de SR e pcps1ab na produtividade"
-  ) +
-  theme_bw()
+ggsave("~/01 Masters_LA/06 Figures/02 plots/fig_m12_partial_effects_original_EN.png", fig_or, width = 11, height = 6.4, dpi = 300)
 
 ######################################
 ######### PCPS - without CSA #########
 ######################################
 
-# load the packages
-
-library("V.PhyloMaker2")
-library(writexl)
-
-# input the sample species list
-example <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/filogenia_total_Sem_CSA.csv")
+# input the sample species list without CSA
+example <- read.csv("01 Datasets/01_raw_data/filogenia_total_Sem_CSA.csv")
 
 ### generate a phylogeny for the sample species list
 tree <- phylo.maker(example, tree = GBOTB.extended.TPL,output.sp.list = TRUE,nodes = nodes.info.1.TPL, scenarios="S3")
 tree_ok <- tree$scenario.3
 summary(tree_ok)
 
-# A função 'cophenetic' calcula a dissimilaridade com base nas distâncias filogenéticas da árvore
 phylo.dissim = cophenetic(tree_ok)
-# Agora padronizamos as distâncias em uma escala de variação de 0 a 1
 std.pdis = (phylo.dissim-min(phylo.dissim))/(max(phylo.dissim)-min(phylo.dissim))
-# Ordenamos as espécies em ordem alfabética, como na matriz da comunidade
 pdis.ord = std.pdis[order(row.names(std.pdis)), order(row.names(std.pdis))]
 
-install.packages("PCPS")
-library(PCPS)
-library(ggplot2)
-library(tidyverse)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
+# install.packages("PCPS")
 
 ### Importing the family groups
 # Define Phylogenetic groups
 grupos <- example$family
 
 # Importing the community matrix
-comunidade <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/comunidade_abund_sem_csa.csv", row.names = 1,header = T, sep = ";")
+comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund_sem_csa.csv", row.names = 1,header = T, sep = ";")
 
 # Running PCPS
 res <- pcps(comunidade, pdis.ord)
@@ -1013,47 +816,12 @@ apg_arrows$labels <- c("Anac", "Anno", "Apocy", "Aster", "Bigno", "Borag", "Cann
 # Merging the data into a single data.frame
 df_plot <- cbind(as.data.frame(scores_sites),
                  produt = dadosmisto1$produt_z_g.ano,
-                 SESPDab = dadosmisto1$SESPDab,
-                 SR = dadosmisto1$SR)
-
-# Now the ggplot works
-
-ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
-  geom_point(aes(color = SESPDab, size = produt)) +
-  scale_colour_gradientn(
-    colors = c("red", "lightyellow", "black"),  # azul → amarelo → vermelho
-    name = "sesPD"
-  ) +
-  scale_size_continuous(
-    name = "Biomass 
-per year (g/y)", 
-    range = c(1, 10),  # controla visualmente o menor e maior tamanho
-    breaks = scales::pretty_breaks(n = 4)  # define 4 categorias de tamanho
-  ) +
-  labs(x = paste0("PCPS1 (", pcps1_var, "%)"), 
-       y = paste0("PCPS2 (", pcps2_var, "%)"),
-       title = "Phylogenetic composition of the study areas (w/ CSA)") +
-  geom_text(data = apg_arrows,
-            aes(x = pcps.1, y = pcps.2, label = labels), 
-            fontface = "bold", color = "black", size = 1) +
-  geom_label(data = apg_arrows,
-             aes(x = pcps.1, y = pcps.2, label = labels), 
-             fontface = "bold", fill = "grey", alpha = 0.5,
-             color = "black", size = 5) +
-  theme_minimal() +
-  theme(
-    axis.line = element_line(color = "black", linewidth = 0.8),
-    axis.text = element_text(size = 11),
-    axis.title = element_text(size = 13),
-    legend.title = element_text(size = 14),   # título da legenda maior
-    legend.text = element_text(size = 12)     # texto das categorias maior
-  )
-
-ggsave("pcps_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+                 SESPD = dadosmisto1$sespd,
+                 SR = dadosmisto1$sr)
 
 ## only sespd
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
-  geom_point(aes(color = SESPDab), size = 3) +
+  geom_point(aes(color = SESPD), size = 3) +
   scale_colour_gradientn(
     colors = c("red", "pink", "#FAFD77", "black"),
     values = scales::rescale(c(-4, -2, 0, 2)),
@@ -1081,11 +849,9 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
     legend.text = element_text(size = 12)
   )
 
-
-
+ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_SESPD_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
 
 ### only biomass
-
 
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
   geom_point(aes(color = produt), size = 4) +
@@ -1113,73 +879,89 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
     legend.text = element_text(size = 12)
   )
 
-ggsave("pcps_biomass_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_biomass_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
 
-########################################
-### SINAL FILOGENÉTICO PRODUTIVIDADE ###
-########################################
+################################################
+## Family contribution (%) to PCPS1 and PCPS2 ##
+################################################
 
-## BIOMASSA ### SERÁ QUE BIOMASSA TEM UM SINAL FILOGENÉTICO?
-# Média de biomassa por espécie
+example$species_us <- gsub(" ", "_", example$species)
+species_in_scores <- rownames(scores_species)
 
-dados <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/prod_spp_semcsa.csv", row.names = 1,header = T, sep = ";")
+family_vec <- example$family[
+  match(species_in_scores, example$species_us)
+]
 
-library(ape)
+fam_centroids <- aggregate(
+  scores_species[, c("pcps.1", "pcps.2")],
+  by = list(Family = family_vec),
+  FUN = mean
+)
+
+fam_ss_pc1 <- tapply(scores_species[, "pcps.1"]^2,
+                     family_vec,
+                     sum)
+
+fam_ss_pc2 <- tapply(scores_species[, "pcps.2"]^2,
+                     family_vec,
+                     sum)
+fam_contrib <- tibble(
+  Family = names(fam_ss_pc1),
+  SS_PC1 = as.numeric(fam_ss_pc1),
+  Pct_PC1 = 100 * SS_PC1 / sum(SS_PC1),
+  SS_PC2 = as.numeric(fam_ss_pc2[names(fam_ss_pc1)]),
+  Pct_PC2 = 100 * SS_PC2 / sum(SS_PC2)
+)
+
+fam_summary <- fam_centroids %>%
+  left_join(fam_contrib, by = "Family") %>%
+  arrange(desc(Pct_PC1)) 
+head(fam_summary, 10)
+# Fabaceae #1
+
+###########################
+### PHYLOGENETIC SIGNAL ###
+###########################
+
+# Without CSA
+
+dados <- read.csv("01 Datasets/01_raw_data/prod_spp_semcsa.csv", row.names = 1,header = T, sep = ";")
 
 tree_teste <- multi2di(tree_ok)
-
-library(picante)
 
 resultado <- multiPhylosignal(dados, tree_teste) # k = 0.1805496 FRACO SINAL
 
-## DAP ### SERÁ QUE DAP TEM UM SINAL FILOGENÉTICO?
-# Média de DAP por espécie
+## DAP ### WITH CSA ## ALTER THIS LATER
 
-dados <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dap_spp.csv", row.names = 1,header = T, sep = ";")
-
-library(ape)
+dados <- read.csv("01 Datasets/01_raw_data/dap_spp.csv", row.names = 1,header = T, sep = ";")
 
 tree_teste <- multi2di(tree_ok)
 
-library(picante)
-
 resultado <- multiPhylosignal(dados, tree_teste) # k = 0.2499149 FRACO SINAL
 
-###########################################
-########## PCA DA GRANULOMETRIA ###########
-###########################################
+#######################################
+########## PCA GRANULOMETRY ###########
+#######################################
 
-library(ggplot2)
-library(readxl)
-library(tidyverse)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
+granulometria <- read_excel("01 Datasets/01_raw_data/granulometria.xlsx")
 
-# Ler os dados
-granulometria <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/granulometria.xlsx")
-
-# Remover a coluna 'site' para fazer o PCA com apenas as variáveis numéricas
 dados_granulometria <- granulometria[, -1]
 
-# Realizar o PCA usando a função base prcomp()
 pca_resultado <- prcomp(dados_granulometria, scale. = TRUE)
 summary(pca_resultado)
 
-# Plotar o Screeplot para ver a variância explicada por cada componente
 screeplot(pca_resultado, main = "Screeplot - PCA")
 
-# Obter os escores dos componentes principais (PCs)
 escores_pca <- pca_resultado$x
 head(escores_pca)
 
-# Adicionar os escores PCA ao dataframe original
 granulometria_pca <- cbind(granulometria, escores_pca)
 
-# Selecionar os eixos mais explicativos (exemplo: PC1 e PC2)
 granulometria_pca <- granulometria_pca %>%
   select(site, PC1, PC2)
 
 
-# Plotar os dois primeiros componentes principais (PC1 vs PC2) com ggplot2
+# Plot (PC1 vs PC2)
 ggplot(granulometria_pca, aes(x = PC1, y = PC2, color = site)) +
   geom_point(size = 4) +
   labs(title = "PCA: PC1 vs PC2", x = "Componente Principal 1 (PC1)", y = "Componente Principal 2 (PC2)") +
@@ -1212,97 +994,72 @@ ggplot(granulometria_pca, aes(x = PC1, y = PC2)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggsave("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos/PCA_granulometria.jpeg", width = 10, height = 8, dpi = 300)
+ggsave("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/PCA_granulometria.jpeg", width = 10, height = 8, dpi = 300)
 
 cor(dados_granulometria, pca_resultado$x)
+# optional
+write_xlsx(granulometria_pca, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/granulometria_pca.xlsx")
 
 
-library(writexl)
+########################################
+########### PCA - NUTRIENTS ############
+########################################
 
-write_xlsx(granulometria_pca, "C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/granulometria_pca.xlsx")
+pca_nutrientes <- read_excel("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/pca_nutrientes.xlsx")
 
-
-###########################################
-########### PCA DOS NUTRIENTES ############
-###########################################
-
-library(ggplot2)
-library(readxl)
-library(tidyverse)
-library(writexl)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-
-# Ler os dados
-pca_nutrientes <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/pca_nutrientes.xlsx")
-
-# Remover a coluna 'site' para fazer o PCA com apenas as variáveis numéricas
 dados_nutrientes <- pca_nutrientes[, -1]
 
-# Realizar o PCA usando a função base prcomp()
 pca_resultado <- prcomp(dados_nutrientes, scale. = TRUE)
 summary(pca_resultado)
 
-# Plotar o Screeplot para ver a variância explicada por cada componente
 screeplot(pca_resultado, main = "Screeplot - PCA")
 
-# Obter os escores dos componentes principais (PCs)
 escores_pca <- pca_resultado$x
 head(escores_pca)
 
-# Adicionar os escores PCA ao dataframe original
 nutrientes_pca <- cbind(pca_nutrientes, escores_pca)
 
-# Selecionar os eixos mais explicativos (exemplo: PC1 e PC2)
 nutrientes_pca <- nutrientes_pca %>%
   select(site, PC1, PC2)
 
-# Criar data frame com os loadings das variáveis nos dois primeiros componentes
+# Create a data frame with the variable loadings in the first two components
 variaveis_nutrientes <- as.data.frame(pca_resultado$rotation[, 1:2])
-variaveis_nutrientes$nome <- rownames(variaveis_nutrientes) # Adicionar nome das variáveis
+variaveis_nutrientes$nome <- rownames(variaveis_nutrientes) 
 colnames(variaveis_nutrientes) <- c("x", "y", "nome") # Renomear colunas
 
-# Ajustar a posição dos rótulos dependendo da direção do eixo
 variaveis_nutrientes <- variaveis_nutrientes %>%
   mutate(
-    hjust_pos = ifelse(x > 0, 0.2, -0.5),  # Deslocar para a direita se PC1 positivo, para a esquerda se negativo
-    vjust_pos = ifelse(y > 0, -0.8, 1)  # Ajuste vertical baseado no valor de PC2
+    hjust_pos = ifelse(x > 0, 0.2, -0.5),
+    vjust_pos = ifelse(y > 0, -0.8, 1)
   )
 
-# Gráfico PCA ajustado
+# PLOT
 ggplot(nutrientes_pca, aes(x = PC1, y = PC2)) +
-  # Pontos representando os sites
   geom_point(size = 4) +
   geom_text(aes(label = site), vjust = -1.5, hjust = 0.5) +
-  
-  # Adicionar setas das variáveis
   geom_segment(data = variaveis_nutrientes, aes(x = 0, y = 0, xend = x, yend = y),
                arrow = arrow(type = "closed", length = unit(0.2, "inches")),
                color = "red", size = 1) +
-  
-  # Ajustar rótulos das variáveis com deslocamento
   geom_text(data = variaveis_nutrientes, 
             aes(x = x, y = y, label = nome), 
             color = "red", size = 5,
             vjust = variaveis_nutrientes$vjust_pos, 
-            hjust = variaveis_nutrientes$hjust_pos) + # Deslocamento para a esquerda ou direita
-  
-  # Labels e tema
+            hjust = variaveis_nutrientes$hjust_pos) +
   labs(title = "PCA: Nutrientes no solo",
        x = "Componente Principal 1 (PC1)",
        y = "Componente Principal 2 (PC2)") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5))
 
-# Salvar o gráfico
-ggsave("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos/PCA_nutrientes.jpeg", width = 10, height = 8, dpi = 300)
+ggsave("~/01 Masters_LA/06 Figures/02 plots/PCA_nutrientes.jpeg", width = 10, height = 8, dpi = 300)
 
-# Calcular correlação entre variáveis originais e os PCs
+# Calculate the correlation between the original variables and the PCs.
 correlacoes <- cor(dados_nutrientes, pca_resultado$x)
 print(correlacoes)
 
 # Salvar os resultados em Excel
-write_xlsx(nutrientes_pca, "C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/nutrientes_pca.xlsx")
-write_xlsx(as.data.frame(correlacoes), "C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/correlacoes_pca.xlsx")
+write_xlsx(nutrientes_pca, "01 Datasets/02_processed_data/nutrientes_pca.xlsx")
+write_xlsx(as.data.frame(correlacoes), "01 Datasets/02_processed_data/correlacoes_pca.xlsx")
 
 # ------------------------------------------
 # PCA para variáveis climáticas (ppt, tmax, tmin)
