@@ -3,28 +3,34 @@
 ##############################################
 
 # Carregar pacotes
+library(FD)
+library(tidyverse)
+library(MuMIn) #AICc
 library(readxl)
-library(FD)
-
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/Resultados funcional")
-
-#### FUNCIONAL MICO-LEÃO + Exportação para Excel ####
-
-# === 1. Carregar pacotes ===
-library(FD)
 library(openxlsx)
+library(writexl)
+library(ggplot2)
+library(patchwork)   # to combine plots side by side
+library(ggeffects)
+library(webshot2)
+library(purrr)
+library(stringr)
 
-# === 2. Leitura dos dados ===
-comunidade_ml <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/comunidade_ml.csv", 
-                          row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
+library(plotly) # Masks dplyr filter()
 
-funcional_ml <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/funcional_ml.csv", 
-                         row.names = 1, sep = ";")
+##############################
+#### FUNCTIONAL MICO-LEÃO ####
+##############################
 
-# === 3. Atributos usados ===
+# Read data
+comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
+
+funcional_ml <- read.csv("01 Datasets/01_raw_data//funcional_ml.csv", row.names = 1, sep = ";")
+
+# Select traits
 atributos <- c("WD", "SLA", "LDMC")
 
-# === 4. Rodar dbFD combinado ===
+# === Combined dbFD ===
 resultado_fd_ml <- dbFD(
   x = funcional_ml[, atributos],
   a = comunidade_ml,
@@ -36,10 +42,10 @@ resultado_fd_ml <- dbFD(
   corr = "cailliez"
 )
 
-# === 5. Criar planilha Excel e adicionar abas ===
+# === Create Excel e with tabs ===
 wb <- createWorkbook()
 
-# Adicionar métricas combinadas
+# Add each metric
 addWorksheet(wb, "FDis_Combinado")
 writeData(wb, "FDis_Combinado", resultado_fd_ml$FDis)
 
@@ -52,7 +58,7 @@ writeData(wb, "FDiv_Combinado", resultado_fd_ml$FDiv)
 addWorksheet(wb, "CWM_por_atributo")
 writeData(wb, "CWM_por_atributo", resultado_fd_ml$CWM)
 
-# === 6. Cálculo separado por atributo (sem CWM) ===
+# === FD for each trait (no CWM) ===
 for (attr in atributos) {
   cat("Calculando para:", attr, "\n")
   dados_attr <- funcional_ml[, attr, drop = FALSE]
@@ -77,28 +83,23 @@ for (attr in atributos) {
   writeData(wb, paste0("FDiv_", attr), res$FDiv)
 }
 
-# === 7. Salvar o arquivo Excel ===
-saveWorkbook(wb, file = "Resultados_Funcional_MicoLeao.xlsx", overwrite = TRUE)
+# === Save archive ===
+saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_MicoLeao.xlsx", overwrite = TRUE)
 
-###
+##########################
+#### FUNCTIONAL REGUA ####
+##########################
 
-#### FUNCIONAL REGUA + Exportação para Excel ####
+# Read data
+comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
 
-# === 1. Pacotes ===
-library(FD)
-library(openxlsx)
-
-# === 2. Leitura dos dados ===
-comunidade_regua <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/comunidade_regua.csv", 
-                             row.names = 1, sep = ";", check.names = FALSE)
-
-funcional_regua <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/funcional_regua.csv", 
+funcional_regua <- read.csv("01 Datasets/01_raw_data/funcional_regua.csv", 
                             row.names = 1, sep = ";")
 
-# === 3. Atributos usados ===
+# === Select traits ===
 atributos <- c("WD", "SLA", "LDMC")
 
-# === 4. Rodar dbFD combinado ===
+# === Run combined dbFD ===
 resultado_fd_combinado <- dbFD(
   x = funcional_regua[, atributos],
   a = comunidade_regua,
@@ -110,10 +111,10 @@ resultado_fd_combinado <- dbFD(
   corr = "cailliez"
 )
 
-# === 5. Criar planilha Excel e adicionar abas ===
+# === Create excel with tabs ===
 wb <- createWorkbook()
 
-# Adicionar métricas combinadas
+# Add metrics
 addWorksheet(wb, "FDis_Combinado")
 writeData(wb, "FDis_Combinado", resultado_fd_combinado$FDis)
 
@@ -126,7 +127,7 @@ writeData(wb, "FDiv_Combinado", resultado_fd_combinado$FDiv)
 addWorksheet(wb, "CWM_por_atributo")
 writeData(wb, "CWM_por_atributo", resultado_fd_combinado$CWM)
 
-# === 6. Cálculo separado para cada atributo (sem CWM) ===
+# === FD for each trait (no CWM) ===
 for (attr in atributos) {
   cat("Calculando para:", attr, "\n")
   dados_attr <- funcional_regua[, attr, drop = FALSE]
@@ -151,27 +152,29 @@ for (attr in atributos) {
   writeData(wb, paste0("FDiv_", attr), res$FDiv)
 }
 
-# === 7. Salvar arquivo final ===
-saveWorkbook(wb, file = "Resultados_Funcional_REGUA.xlsx", overwrite = TRUE)
+# === Save archive ===
+saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_REGUA.xlsx", overwrite = TRUE)
+
+########################
+### MULTICOLINEARITY ###
+########################
+
+
+library(car)
 
 
 
-#########################
-## LINEAR MIXED MODELS ##
-#########################
 
-library(writexl)
-library(readxl)
-dadosreg <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/reg_funcional.xlsx")
 
-#### PRODUTIVIDADE ####
+##########
+## GLMS ##
+##########
 
-sespd.fdis <- lm(SESPD~fdis,data = dadosreg)
-summary(sespd.fdis) # p-value: 0.6745  
-sespd.fric <- lm(SESPD~fric,data = dadosreg)
-summary(sespd.fric) # p-value: 0.7363
-sespd.fdiv <- lm(SESPD~fdiv,data = dadosreg)
-summary(sespd.fdiv) # p-value: 0.04788 *
+dadosreg <- read_excel("01 Datasets/01_raw_data/reg_funcional.xlsx")
+
+#### CARBON ACCUMULATION (LOG_PRODUT) ####
+
+# Functional diversity
 
 produt.fdis <- lm(log_produt~fdis,data = dadosreg)
 summary(produt.fdis) # p-value: 0.323     
@@ -233,60 +236,83 @@ summary(produt.fric_ldmc) # p-value: 0.0301 *
 residuos_fric_ldmc <- residuals(produt.fric_ldmc)
 shapiro.test(residuos_fric_ldmc) #NORMAL
 
+# Taxonomic diversity
 produt.SR <- lm(log_produt~SR,data = dadosreg)
 summary(produt.SR) # p-value: 0.7908
 residuos_sr <- residuals(produt.SR)
 shapiro.test(residuos_sr) #NORMAL
 
+# Phylogenetic diversity
+
+produt.SESPD <- lm(log_produt~SESPD,data = dadosreg)
+summary(produt.SESPD) # p-value: 0.2167
+residuos_SESPD <- residuals(produt.SESPD)
+shapiro.test(residuos_SESPD) #NORMAL
+
+produt.SESMPD <- lm(log_produt~SESMPD,data = dadosreg)
+summary(produt.SESMPD) # p-value: 0.5041
+residuos_SESMPD <- residuals(produt.SESMPD)
+shapiro.test(residuos_SESMPD) #NORMAL
+
+produt.SESMNTD <- lm(log_produt~SESMNTD,data = dadosreg)
+summary(produt.SESMNTD) # p-value: 0.148
+residuos_SESMNTD <- residuals(produt.SESMNTD)
+shapiro.test(residuos_SESMNTD) #NORMAL
+
+produt.PSV <- lm(log_produt~PSV,data = dadosreg)
+summary(produt.PSV) # p-value: 0.4713
+residuos_PSV <- residuals(produt.PSV)
+shapiro.test(residuos_PSV) #NORMAL
+
+produt.PSC <- lm(log_produt~PSC,data = dadosreg)
+summary(produt.PSV) # p-value: 0.139
+
+produt.PSEab <- lm(log_produt~PSEab,data = dadosreg)
+summary(produt.PSEab) # p-value: 0.2861
+
+# Multiple variables
+
 t <- lm(log_produt~cwm_ldmc+cwm_wd,data = dadosreg)
 summary(t) # p-value: 0.044
+AICc(t)
 
 t2 <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
-anova(t, t2)        # Likelihood-ratio test
-AIC(t); AIC(t2)     # Compare AIC (should drop if FD adds value)
-performance::r2(t); performance::r2(t2)   # ΔR²
+summary(t2) # p-value = 0.1069
 
-# 1.1 FDis only
+# FDis only
 m_fdis <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc, data = dadosreg)
 summary(m_fdis)
-AIC(m_fdis)
-performance::r2(m_fdis)
 
-# 1.2 FRic only
+# FRic only
 m_fric <- lm(log_produt ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
 summary(m_fric)
-AIC(m_fric)
-performance::r2(m_fric)
 
 # 2. Nonlinear (quadratic) test for FDis
 m_fdis_quad <- lm(log_produt ~ cwm_ldmc + cwm_wd +
                     fdis_ldmc + I(fdis_ldmc^2), data = dadosreg)
 summary(m_fdis_quad)
-anova(t, m_fdis_quad)  # compare to CWM-only baseline
 
+### Decoupled ###
 
-##
+produt.dcF <- lm(log_produt~dcF,data = dadosreg)
+summary(produt.dcF) # p-value: 0.148
+residuos_dcF <- residuals(produt.dcF)
+shapiro.test(residuos_dcF) #NORMAL
 
-t  <- lm(log_produt ~ cwm_ldmc + cwm_wd, data = dadosreg)
-t2 <- lm(log_produt ~ fdis_ldmc, data = dadosreg)
-AIC(t, t2)
-summary(t)
+produt.dcP <- lm(log_produt~dcP,data = dadosreg)
+summary(produt.dcP) # p-value: 0.616
+residuos_dcP <- residuals(produt.dcP)
+shapiro.test(residuos_dcP) #NORMAL
 
+s <- lm(log_produt~cwm_ldmc+cwm_wd+dcF,data = dadosreg)
+summary(s)
 
-# site as categorical variable
+ss <- lm(log_produt~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
+summary(ss)
 
-m_site <- lm(log_produt ~ cwm_ldmc + cwm_wd + sitemis, data = dadosreg)
-summary(m_site)
-
-
-m_fd_site <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc * sitemis, data = dadosreg)
-anova(m_site, m_fd_site)
-
-by(dadosreg, dadosreg$sitemis, function(df) summary(lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc, data = df)))
-
+############
 ### Plot ###
-
-library(ggplot2)
+############
 
 ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
   geom_point(size = 3) +
@@ -301,8 +327,7 @@ ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
   labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
 
 
-library(ggplot2)
-library(patchwork)   # to combine plots side by side
+
 
 # Panel A – Mass-ratio (CWM LDMC)
 p1 <- ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
@@ -327,9 +352,6 @@ p1 + p2
 
 ####### Effect plots for each variable #######
 
-library(ggplot2)
-library(ggeffects)
-
 # Get partial predictions (controlling for the other variable)
 eff_ldmc <- ggpredict(t, terms = "cwm_ldmc")
 eff_wd   <- ggpredict(t, terms = "cwm_wd")
@@ -353,19 +375,14 @@ library(patchwork)
 p1 + p2
 
 
-#######
+###############
+### 3D PLOT ###
+###############
 
-install.packages("plotly")
-library(plotly)
-library(tidyverse)
+# install.packages("plotly")
 
-library(plotly)
-
-# 1) Fit (you already have it)
+# 1) Fit
 t <- lm(log_produt ~ cwm_ldmc + cwm_wd, data = dadosreg)
-
-library(plotly)
-
 
 # prediction grid
 xseq <- seq(min(dadosreg$cwm_ldmc, na.rm=TRUE),
@@ -392,19 +409,17 @@ p <- plot_ly() |>
     zaxis = list(title = "log(Biomass/age)")
   ))
 
-install.packages("webshot2")
-library(webshot2)
+p
 
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/Resultados funcional/Gráficos")
-htmlwidgets::saveWidget(p, "3D_model.html")   # salva o gráfico interativo
-webshot("3D_model.html", "3D_model.jpeg", vwidth = 1600, vheight = 1200)
+# install.packages("webshot2")
 
+# Save
+
+htmlwidgets::saveWidget(p, "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html")   # salva o gráfico interativo
+webshot("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html", "3D_model.jpeg", vwidth = 1600, vheight = 1200)
 
 
 ### FACET WRAP ###
-library(tidyverse)
-library(ggplot2)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/Resultados funcional/Gráficos")
 
 # SR
 dadosreg %>%
@@ -417,7 +432,7 @@ dadosreg %>%
        title = "Species Richness and Productivity in ecological restoration plantings")+
   theme_bw()
 
-ggsave("SR_prod_facetwrsp.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/SR_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
 
 # FDIS_SLA
 dadosreg %>%
@@ -430,16 +445,15 @@ dadosreg %>%
        title = "Functional Richness - SLA")+
   theme_bw()
 
-ggsave("SR_prod_facetwrsp.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_SLA_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
 
 
-# Separar por sítio e rodar regressões
+# Divide by site
 modelo_ml <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "ML"))
 modelo_regua <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "REGUA"))
 
-# Ver os resumos
-summary(modelo_ml)
-summary(modelo_regua)
+summary(modelo_ml) # not significant
+summary(modelo_regua) # not significant
 
 # FRic_LDMC
 dadosreg %>%
@@ -452,72 +466,28 @@ dadosreg %>%
        title = "Functional Richness and Productivity in ecological restoration plantings")+
   theme_bw()
 
-ggsave("FRIC_LDMC_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+# ggsave("FRIC_LDMC_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
 
-# Separar por sítio e rodar regressões
+# Divide by site
 modelo_ml <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "ML"))
 modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "REGUA"))
 
-# Ver os resumos
-summary(modelo_ml)
-summary(modelo_regua)
+summary(modelo_ml) # not significant
+summary(modelo_regua) # not significant
+ 
+########################
+### INDIVIDUAL PLOTS ###
+########################
 
-### GRÁFICO NORMAL
-
-# FDis
-dadosreg %>%
-  ggplot(aes(fdis_ldmc,log_produt))+
-  geom_point(size=3,alpha=0.5)+ 
-  geom_smooth(method = lm,se=T,colour="#7FFFD4")+
-  labs(x="FDis - Leaf Dry Matter Content (LDMC)",
-       y="log Productivity (g/m²/ano)",
-       title = "The Relationship between Functional Diversity and Productivity")+
-  annotate("text",x=1,y=4.58,label="R² = 0.17 
-p-valor < 0.05")+
-  theme_replace()
-
-ggsave("FDis_LDMC.png",width = 15,height = 10,units = "cm")
-
-
-# FRic LDMC
-dadosreg %>%
-  ggplot(aes(fric_ldmc,log_produt))+
-  geom_point(size=3,alpha=0.5)+ 
-  geom_smooth(method = lm,se=T,colour="yellow")+
-  labs(x="FRic - Leaf Dry Matter Content (LDMC)",
-       y="log Productivity (g/m²/ano)",
-       title = "The Relationship between Functional Richness and Productivity")+
-  annotate("text",x=2.75,y=4.58,label="R² = 0.20 
-p-valor = 0.03")+
-  theme_replace()
-
-ggsave("FRic_LDMC.png",width = 15,height = 10,units = "cm")
-
-# CWM LDMC
-dadosreg %>%
-  ggplot(aes(cwm_ldmc,log_produt))+
-  geom_point(size=3,alpha=0.5)+ 
-  geom_smooth(method = lm,se=T,colour="red")+
-  labs(x="FDis - Leaf Dry Matter Content (LDMC)",
-       y="log Productivity (g/m²/ano)",
-       title = "The Relationship between Functional Diversity and Productivity")+
-  annotate("text",x=1,y=4.58,label="R² = 0.17 
-p-valor < 0.05")+
-  theme_replace()
-
-###########################
-
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/Resultados funcional/Gráficos")
-
-# Ajuste do modelo
+# Fit the model
 fit <- lm(log_produt ~ fric_ldmc, data = dadosreg)
 summary(fit)
 
-# Extraindo R² e p-valor
+# Extract R² e p-value
 r2 <- summary(fit)$r.squared
 p  <- coef(summary(fit))["fric_ldmc", "Pr(>|t|)"]
 
-# Texto formatado
+# Text
 subtxt <- sprintf("R² = %.2f\np = %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
@@ -542,8 +512,8 @@ g <- dadosreg %>%
 
 g
 
-# Salvar
-ggsave("FRic_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FRic_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 
 ### FDIS ###
@@ -581,7 +551,7 @@ g <- dadosreg %>%
 g
 
 # Salvar
-ggsave("FDis_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 
 ## CWM LDMC ##
@@ -621,13 +591,99 @@ g <- dadosreg %>%
 
 g
 
+################
+### COEFPLOT ###
+################
+
+
+# ---------- 1) PREDICTORS ----------
+preds <- c("SR",
+           "fdis","fric","fdiv",
+           "cwm_wd","cwm_sla","cwm_ldmc",
+           "fdis_wd","fric_wd",
+           "fdis_sla","fric_sla",
+           "fdis_ldmc","fric_ldmc")
+
+# labels for the plot
+pretty_lab <- c(
+  SR           = "Species richness (SR)",
+  fdis         = "FDis (all traits)",
+  fric         = "FRic (all traits)",
+  fdiv         = "FDiv (all traits)",
+  cwm_wd       = "CWM — Wood density",
+  cwm_sla      = "CWM — SLA",
+  cwm_ldmc     = "CWM — LDMC",
+  fdis_wd      = "FDis — WD",
+  fric_wd      = "FRic — WD",
+  fdis_sla     = "FDis — SLA",
+  fric_sla     = "FRic — SLA",
+  fdis_ldmc    = "FDis — LDMC",
+  fric_ldmc    = "FRic — LDMC"
+)
+
+# ---------- 2) Adjust and extract DF ----------
+fit_and_tidy <- function(var, dat) {
+  form <- as.formula(paste0("log_produt ~ ", var))
+  fit  <- lm(form, data = dat)
+  sm   <- summary(fit)
+  ci   <- suppressWarnings(confint(fit, level = 0.95))
+  est  <- sm$coefficients[var, "Estimate"]
+  se   <- sm$coefficients[var, "Std. Error"]
+  pval <- sm$coefficients[var, "Pr(>|t|)"]
+  lo   <- ci[var, 1]
+  hi   <- ci[var, 2]
+  tibble(
+    predictor = var,
+    estimate  = est,
+    conf.low  = lo,
+    conf.high = hi,
+    p.value   = pval
+  )
+}
+
+# ---------- 3) COEFICIENTS TABLE ----------
+coef_tab <- map_dfr(preds, fit_and_tidy, dat = dadosreg) %>%
+  mutate(label      = pretty_lab[predictor],
+         is_ldmc    = str_detect(predictor, "ldmc"),
+         sig        = p.value < 0.05,
+         label_plot = ifelse(sig, paste0("**", label, "**"), label))
+
+# Order by magnitude of the effect (absolute) or as you prefer.
+coef_tab <- coef_tab %>%
+  arrange(estimate) %>%
+  mutate(label_plot = factor(label_plot, levels = label_plot))
+
+# ---------- 4) PLOT ----------
+g_coef <- ggplot(coef_tab,
+                 aes(x = estimate, y = label_plot)) +
+  geom_vline(xintercept = 0, linetype = 2, color = "gray70") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
+                 height = 0.2,
+                 alpha  = ifelse(coef_tab$sig, 1, 0.5),
+                 color  = ifelse(coef_tab$is_ldmc, "#E5C100", "gray55")) +
+  geom_point(size = 2.8,
+             alpha = ifelse(coef_tab$sig, 1, 0.7),
+             color = ifelse(coef_tab$is_ldmc, "#E5C100", "gray25")) +
+  labs(x = "Slope (β) ± 95% CI",
+       y = NULL,
+       title = "Effect sizes of trait metrics on productivity",
+       subtitle = "Highlighted in yellow: LDMC metrics; Bold labels: p < 0.05") +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.title.x   = element_text(face = "bold"),
+    plot.subtitle  = element_text(color = "gray30"),
+    panel.grid.minor = element_blank()
+  )
+
+g_coef
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/coefplot_produt_raw.jpeg", g_coef, width = 16, height = 11, units = "cm", dpi = 600)
 
 
 ######################################
 ### PHYLOGENETIC SIGNAL FOR TRAITS ###
 ######################################
 
-## MONTAR A ÁRVORE SÓ COM AS ESPÉCIES DE ML E REGUA
+## ASSEMBLE THE TREE ONLY WITH THE ML AND REGUA SPECIES
 
 # load the packages
 
@@ -635,15 +691,14 @@ library("V.PhyloMaker2")
 library(writexl)
 
 # input the sample species list
-example <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/filogenia_ml_regua.csv")
+example <- read.csv("01 Datasets/01_raw_data/filogenia_ml_regua.csv")
 
 ### generate a phylogeny for the sample species list
 tree <- phylo.maker(example, tree = GBOTB.extended.TPL,output.sp.list = TRUE,nodes = nodes.info.1.TPL, scenarios="S3")
 tree_ok <- tree$scenario.3
 summary(tree_ok)
 
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística")
-dados <- read.csv("funcional_ml_regua.csv", row.names = 1,header = T, sep = ";")
+dados <- read.csv("01 Datasets/01_raw_data/funcional_ml_regua.csv", row.names = 1,header = T, sep = ";")
 
 library(ape)
 
@@ -654,13 +709,10 @@ library(picante)
 resultado <- multiPhylosignal(dados[, c("WD", "SLA", "LDMC")], tree_teste)
 # LDMC - SINAL FORTE
 
-#
-#
-#
-### DECOUPLED EFFECTS ###
-#
-#
-#
+
+###----------------------
+#    DECOUPLED EFFECTS
+###----------------------
 
 # Load required packages
 library(devtools)
@@ -724,98 +776,8 @@ AICc(modelo_dcP)
 
 
 
-################################################################################
 
 
-### COEFPLOT ###
-
-library(dplyr)
-library(ggplot2)
-library(purrr)
-library(stringr)
-
-# ---------- 1) LISTA DE PREDITORES ----------
-preds <- c("SR",
-           "fdis","fric","fdiv",
-           "cwm_wd","cwm_sla","cwm_ldmc",
-           "fdis_wd","fric_wd",
-           "fdis_sla","fric_sla",
-           "fdis_ldmc","fric_ldmc")
-
-# Rótulos amigáveis para o gráfico
-pretty_lab <- c(
-  SR           = "Species richness (SR)",
-  fdis         = "FDis (all traits)",
-  fric         = "FRic (all traits)",
-  fdiv         = "FDiv (all traits)",
-  cwm_wd       = "CWM — Wood density",
-  cwm_sla      = "CWM — SLA",
-  cwm_ldmc     = "CWM — LDMC",
-  fdis_wd      = "FDis — WD",
-  fric_wd      = "FRic — WD",
-  fdis_sla     = "FDis — SLA",
-  fric_sla     = "FRic — SLA",
-  fdis_ldmc    = "FDis — LDMC",
-  fric_ldmc    = "FRic — LDMC"
-)
-
-# ---------- 2) FUNÇÃO PARA AJUSTAR E EXTRAIR COEF ----------
-fit_and_tidy <- function(var, dat) {
-  form <- as.formula(paste0("log_produt ~ ", var))
-  fit  <- lm(form, data = dat)
-  sm   <- summary(fit)
-  ci   <- suppressWarnings(confint(fit, level = 0.95))
-  # Pega só o termo do preditor
-  est  <- sm$coefficients[var, "Estimate"]
-  se   <- sm$coefficients[var, "Std. Error"]
-  pval <- sm$coefficients[var, "Pr(>|t|)"]
-  lo   <- ci[var, 1]
-  hi   <- ci[var, 2]
-  tibble(
-    predictor = var,
-    estimate  = est,
-    conf.low  = lo,
-    conf.high = hi,
-    p.value   = pval
-  )
-}
-
-# ---------- 3) TABELA DE COEFICIENTES ----------
-coef_tab <- map_dfr(preds, fit_and_tidy, dat = dadosreg) %>%
-  mutate(label      = pretty_lab[predictor],
-         is_ldmc    = str_detect(predictor, "ldmc"),
-         sig        = p.value < 0.05,
-         label_plot = ifelse(sig, paste0("**", label, "**"), label))
-
-# Ordena por magnitude do efeito (absoluta) ou como preferir
-coef_tab <- coef_tab %>%
-  arrange(estimate) %>%
-  mutate(label_plot = factor(label_plot, levels = label_plot))
-
-# ---------- 4) PLOT ----------
-g_coef <- ggplot(coef_tab,
-                 aes(x = estimate, y = label_plot)) +
-  geom_vline(xintercept = 0, linetype = 2, color = "gray70") +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
-                 height = 0.2,
-                 alpha  = ifelse(coef_tab$sig, 1, 0.5),
-                 color  = ifelse(coef_tab$is_ldmc, "#E5C100", "gray55")) +
-  geom_point(size = 2.8,
-             alpha = ifelse(coef_tab$sig, 1, 0.7),
-             color = ifelse(coef_tab$is_ldmc, "#E5C100", "gray25")) +
-  labs(x = "Slope (β) ± 95% CI",
-       y = NULL,
-       title = "Effect sizes of trait metrics on productivity",
-       subtitle = "Highlighted in yellow: LDMC metrics; Bold labels: p < 0.05") +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.title.x   = element_text(face = "bold"),
-    plot.subtitle  = element_text(color = "gray30"),
-    panel.grid.minor = element_blank()
-  )
-
-g_coef
-ggsave("coefplot_produt_raw.jpeg", g_coef, width = 16, height = 11, units = "cm", dpi = 600)
 
 
 
