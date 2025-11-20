@@ -22,13 +22,13 @@ library(vegan)
 library(readxl)
 library(tidyverse)
 library(corrplot)
+library(lme4)
 library(lmerTest) # LMM
 library(MuMIn) #AICc
 library(car)
 library(broom.mixed)
 library(grid)  # unit()
 library(sjPlot)
-library(lme4)
 library(ggeffects)   # ggpredict
 library(patchwork)
 library(effects)
@@ -362,7 +362,7 @@ dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 modelo_nulo <- lmer(log_produt ~ (1|site), data = dadosmisto1, REML = FALSE)
 
-### SEM CSA ###
+### WITHOUT CSA ###
 
 m1 <- lmer(log_produt ~ sr + silte + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(m1) 

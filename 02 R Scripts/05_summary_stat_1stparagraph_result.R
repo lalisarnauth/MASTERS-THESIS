@@ -4,11 +4,12 @@
 ## ======================================================
 
 library(writexl)
-library(readxl)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/TRABALHO EXCEL")
-dadosmisto <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dadosmisto.xlsx")
+library(readr)
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
+                       header = TRUE,
+                       sep = ";")
 
-# funções auxiliares
+# auxiliary functions
 se_ <- function(x) sd(x, na.rm = TRUE) / sqrt(sum(!is.na(x)))
 summ_ <- function(x) c(
   n = sum(!is.na(x)),
@@ -20,7 +21,7 @@ summ_ <- function(x) c(
 fmt_pm <- function(mean, se, digits = 2) paste0(round(mean, digits), " ± ", round(se, digits))
 fmt_range <- function(minv, maxv, digits = 2) paste0(round(minv, digits), "–", round(maxv, digits))
 
-# variáveis de interesse
+# variables of interest
 vars <- list(
   `Net carbon assimilation (g m^-2 yr^-1)` = dadosmisto1$produt_z_g.ano,
   `Species richness (SR)`                  = dadosmisto1$SR,
@@ -29,7 +30,7 @@ vars <- list(
   `Silt (%)`                               = dadosmisto1$silte
 )
 
-# calcular estatísticas
+# calculate statistics
 res_list <- lapply(vars, summ_)
 res_df <- as.data.frame(do.call(rbind, res_list))
 res_df$`Mean ± SE` <- mapply(fmt_pm, res_df$mean, res_df$se)
@@ -47,7 +48,6 @@ res_out_export <- cbind(
 )
 rownames(res_out_export) <- NULL
 
-write_xlsx(as.data.frame(res_out),
-           "C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/TRABALHO EXCEL/summary_results_paragraph_withCSA.xlsx")
+write_xlsx(as.data.frame(res_out),"01 Datasets/02_processed_data/summary_results_paragraph_withCSA.xlsx")
 
 

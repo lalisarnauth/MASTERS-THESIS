@@ -1,3 +1,8 @@
+
+#####################################
+### Guilherme Mazzochini's Script ###
+#####################################
+
 ntt_pcps <- pcps(ntt_phylodata$community[,] , ntt_phylodata$phylodist)
 
 scores_pcps <- scores.pcps(ntt_pcps, choice = c(1,5))
