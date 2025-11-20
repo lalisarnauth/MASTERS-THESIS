@@ -2,8 +2,10 @@
 ### SCRIPT FOR PHYLOGENETIC ANALYSIS ###
 ########################################
 
-# last update: 2025/10/27 (YYYY/MM/DD)
+# last update: 2025/11/19 (YYYY/MM/DD)
 # author: Laíla Arnauth
+# Post Graduate Program in Ecology - UFRJ - Brazil
+# Collaboration with University of Regina - Canada # Forest Dynamics Lab
 
 ################################
 #### PHYLOGENETIC DIVERSITY ####
@@ -32,7 +34,14 @@ library(ggeffects)   # ggpredict
 library(patchwork)
 library(effects)
 library(PCPS)
+library(FactoMineR)  # advanced PCA
+library(factoextra)
+library(hillR) # Hill numbers
+library(phytools)
 
+#########################
+### PHYLOGENETIC TREE ###
+#########################
 
 # Install V.PhyloMaker2
 # install.packages("devtools")
@@ -83,7 +92,10 @@ comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund.csv",
   header = TRUE,
   sep = ";")
 
-### Finally, phylogenetic diversity is calculated w/ picante
+### ------------------------------------------------ ###
+### phylogenetic diversity is calculated w/ picante  ###
+### ------------------------------------------------ ###
+
 colnames(comunidade)==colnames(pdis.ord) # checking if they match
 
 # PD FAITH
@@ -114,7 +126,12 @@ mntd_df <- tibble::tibble(
 
 write_xlsx(mntd_df, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/MNTD.xlsx")
 
-### Standardized effect size of PD ##### Runs = 99 # ape
+### ---------------------------------- ###
+### Standardized effect size with ape  ###
+### ---------------------------------- ###
+
+### Standardized effect size of PD  ##### Runs = 999
+
 # tree_clean <- drop.tip(tree_ok, tip = which(is.na(tree_ok$tip.label))) #OPTIONAL
 
 ses_pd <- ses.pd(comunidade, tree_ok, null.model="richness", runs = 999,iterations = 1000,include.root = FALSE)
@@ -1061,37 +1078,34 @@ print(correlacoes)
 write_xlsx(nutrientes_pca, "01 Datasets/02_processed_data/nutrientes_pca.xlsx")
 write_xlsx(as.data.frame(correlacoes), "01 Datasets/02_processed_data/correlacoes_pca.xlsx")
 
-# ------------------------------------------
-# PCA para variáveis climáticas (ppt, tmax, tmin)
-# Script para uso em SEM - Laíla Iglesias
-# ------------------------------------------
-
-# 1. Carregar pacotes
-library(tidyverse)   # Manipulação de dados e visualização
-library(FactoMineR)  # PCA avançada
-library(factoextra)  # Visualização da PCA
+##################################################
+# SEM - PCA Climatic Variables (ppt, tmax, tmin) #
+##################################################
 
 # 2. Carregar os dados (exemplo com dados fictícios)
 
-dados <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dadosmisto.xlsx")
+dados <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
+                       header = TRUE,
+                       sep = ";")
 
-# 3. Padronizar as variáveis (média = 0, DP = 1)
+dados1 <- dados[-c(1:7), ]
+
+# scale
 dados_padronizados <- dados %>% 
   select(ppt, tmax, tmin) %>% 
   scale() %>% 
   as.data.frame()
 
-# 4. Executar a PCA
+# PCA
 pca_resultado <- PCA(dados_padronizados, graph = FALSE)
 
-# 5. Visualizar resultados
-summary(pca_resultado)  # Proporção de variância explicada
+summary(pca_resultado) 
 fviz_eig(pca_resultado) # Scree plot
 
-# 6. Extrair cargas (loadings) das variáveis
+# Extract cargas (loadings)
 
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-jpeg("pca_aridez.jpeg", width = 2000, height = 1600, res = 300)
+
+jpeg("~/01 Masters_LA/06 Figures/02 plots/pca_aridez.jpeg", width = 2000, height = 1600, res = 300)
 print(fviz_pca_var(pca_resultado, 
                    col.var = "contrib",
                    gradient.cols = c("blue", "yellow", "red"),
@@ -1099,229 +1113,59 @@ print(fviz_pca_var(pca_resultado,
                    title = "Dryness Gradient"))
 dev.off()
 
-# 7. Obter o PC1 para uso no SEM
-dados$PC1_clima <- pca_resultado$ind$coord[, 1]  # Extrai scores do PC1
+# PC1 extraction to use in SEM
+dados$PC1_clima <- pca_resultado$ind$coord[, 1]
 
-# 8. Verificar a direção do PC1 (importante para interpretação)
+# Check the direction of PC1 (important for interpretation)
 cor(dados_padronizados, dados$PC1_clima)
 
 # 9. Salvar os dados com o PC1
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/TRABALHO EXCEL")
-write.csv(dados, "dados_pc1aridez.csv", row.names = FALSE)
+write.csv(dados, "01 Datasets/02_processed_data/dados_pc1aridez.csv", row.names = FALSE)
 
-# -----------------------------------------------
-# ANÁLISE DE DIVERSIDADE FILOGENÉTICA BASEADA EM HILL NUMBERS
-# -----------------------------------------------
+########################################
+# Phylogenetic Analysis - HILL NUMBERS #
+########################################
 
-# 1. CARREGAR PACOTES E DADOS
-# Instalar pacotes se necessário (remova o # para instalar)
 # install.packages(c("picante", "PhyloMeasures", "hillR", "ape", "phytools", "dplyr"))
-install.packages("hillR")
-library(picante)
-library(hillR)
-library(ape)
-library(phytools)
-library(dplyr)
+#install.packages("hillR")
 
-# Carregar seus dados
-# (Substitua pelos seus próprios dados)
-comunidade <- read.csv("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/comunidade_pd.csv", row.names = 1,header = T, sep = ";")
+comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund_sem_csa.csv", row.names = 1,header = T, sep = ";")
 
-# 2. CÁLCULO DAS MÉTRICAS
-
-# a) Usando hillR (recomendado para simplicidade)
+# a) hillR
 hill_metrics <- data.frame(
-  Local = rownames(comunidade),
+  parcela = rownames(comunidade),
   PD_q0 = hill_phylo(comunidade, tree_ok, q = 0),
   PD_q1 = hill_phylo(comunidade, tree_ok, q = 1),
   PD_q2 = hill_phylo(comunidade, tree_ok, q = 2)
 )
 
-library(writexl)
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística")
-write_xlsx(hill_metrics, "hill_metrics.xlsx")
-
-# b) Função customizada para qPD(T) (Chao et al.)
-calculate_qPD <- function(comunidade, tree_ok, q = 0, T = NULL) {
-  if (is.null(T)) T <- max(node.depth.edgelength(tree_ok))
-  
-  branches <- tree_ok$edge
-  branch_lengths <- tree_ok$edge.length
-  node_ages <- node.depth.edgelength(tree_ok)
-  root_age <- max(node_ages)
-  
-  valid_branches <- which((root_age - node_ages[branches[, 1]]) >= (root_age - T))
-  
-  node_abundances <- matrix(0, nrow = nrow(comm), ncol = max(branches))
-  for (i in 1:nrow(comm)) {
-    tip_abundances <- comm[i, ]
-    for (tip in 1:length(tip_abundances)) {
-      path <- nodepath(tree_ok, from = max(branches) + 1, to = tip)
-      node_abundances[i, path[-length(path)]] <- node_abundances[i, path[-length(path)]] + tip_abundances[tip]
-    }
-  }
-  
-  qPD <- numeric(nrow(comm))
-  for (i in 1:nrow(comm)) {
-    a_i <- node_abundances[i, branches[valid_branches, 2]]
-    L_i <- branch_lengths[valid_branches]
-    
-    if (q == 0) {
-      qPD[i] <- sum(L_i)
-    } else if (q == 1) {
-      qPD[i] <- exp(-sum((L_i/T) * (a_i/sum(a_i)) * log(a_i/sum(a_i)))))
-    } else {
-      qPD[i] <- (sum(L_i * (a_i/sum(a_i))^q))^(1/(1-q))
-    }
-  }
-  return(qPD)
-}
-
-# Calcular métricas customizadas
-custom_metrics <- data.frame(
-  Local = rownames(comunidade),
-  qPD_0 = calculate_qPD(comunidade, tree_ok, q = 0),
-  qPD_1 = calculate_qPD(comunidade, tree_ok, q = 1),
-  qPD_2 = calculate_qPD(comunidade, tree_ok, q = 2)
-)
-
-# 3. Regressão
-
-library(writexl)
-library(readxl)
-library(lmerTest) #MODELO MISTO
-library(MuMIn) #AICc
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística")
-dadosmisto <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dadosmisto.xlsx")
+write_xlsx(hill_metrics, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/hill_metrics.xlsx")
 
 
+# LMMs
 
-###############
-### COM CSA ###
-###############
-# Modelo nulo sem os preditores fixos
 modelo_nulo <- lmer(log_produt ~ (1 | site), data = dadosmisto, REML = FALSE)
 summary(modelo_nulo)
 AICc(modelo_nulo)
 
 
-misto1 <- lmer(log_produt ~ PD_q0 + (1 | site), data = dadosmisto, REML = FALSE)
-summary(misto1) # p-value = 0.0142 *
-r.squaredGLMM(misto1) # 0.4845147
-AICc(misto1) # 87.51476
+misto1 <- lmer(log_produt ~ PD_q0 + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(misto1) # p-value =  0.011 *
+r.squaredGLMM(misto1) # 0.6126289
+AICc(misto1) # 75.58639
 
-misto2 <- lmer(log_produt ~ PD_q1 + (1 | site), data = dadosmisto, REML = FALSE)
-summary(misto2) # p-value = 0.34
-r.squaredGLMM(misto2) # 0.3855655
-AICc(misto2) # 92.49965
+misto2 <- lmer(log_produt ~ PD_q1 + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(misto2) # p-value = 0.33
+r.squaredGLMM(misto2) # 0.5093365
+AICc(misto2) # 80.89568
 
-misto3 <- lmer(log_produt ~ PD_q2 + (1 | site), data = dadosmisto, REML = FALSE)
-summary(misto3) # p-value = 0.23
-r.squaredGLMM(misto3) # 0.3933207
-AICc(misto3) # 91.96249
+misto3 <- lmer(log_produt ~ PD_q2 + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(misto3) # p-value = 0.24
+r.squaredGLMM(misto3) # 0.5127555
+AICc(misto3) # 80.4419
 
-misto4 <- lmer(log_produt ~ PD_q0 + SESPD + (1 | site), data = dadosmisto, REML = FALSE)
-summary(misto4) # p-value = 0.23
-r.squaredGLMM(misto4) # 0.3933207
-AICc(misto4) # 91.96249
-
-
-
-##########################################
-############ PREDICT EFFECTS #############
-##########################################
-
-library(readxl)
-library(car)
-library(ggeffects)
-library(ggplot2)
-library(lme4)
-
-dadosmisto <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/dadosmisto.xlsx")
-
-misto.Produt.PSE.ppt.SR.Site <- lmer(log_produt ~ PSE + ppt + SR + (1 | site), data = dadosmisto, REML = FALSE)
-
-# Plotar resíduos do modelo
-plot(misto.Produt.PSE.ppt.SR.Site)
-
-# Gerar efeitos marginais para a variável PSE
-effects_PSE <- ggpredict(misto.Produt.PSE.ppt.SR.Site, terms = "PSE")
-effects_SR <- ggpredict(misto.Produt.PSE.ppt.SR.Site, terms = "SR")
-effects_ppt <- ggpredict(misto.Produt.PSE.ppt.SR.Site, terms = "ppt")
-
-# Plotar os efeitos marginais com alterações no título e nos eixos
-grafico <- plot(effects_SR) 
-setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/graficos")
-ggsave("grafico_Predicted.PSE.SR.jpeg", plot = grafico, device = "jpeg", width = 8, height = 6, dpi = 300)
-
-# PSE
-grafico <- plot(effects_PSE) +
-  ggtitle("Predicted values of productivity (best LMM model)") +
-  xlab("PSE") +
-  ylab("Productivity (g/m²/year)")
-
-ggsave("Predicted_PSE.jpeg", plot = grafico, device = "jpeg", width = 8, height = 6, dpi = 300)
-
-##### SR
-grafico <- plot(effects_SR) +
-  ggtitle("Predicted values of productivity (best LMM model)") +
-  xlab("SR") +
-  ylab("Productivity (g/m²/year)")
-
-
-ggsave("Predicted_SR.jpeg", plot = grafico, device = "jpeg", width = 8, height = 6, dpi = 300)
-
-
-##### SR
-grafico <- plot(effects_ppt) +
-  ggtitle("Predicted values of productivity (best LMM model)") +
-  xlab("ppt") +
-  ylab("Productivity (g/m²/year)")
-
-
-ggsave("Predicted_ppt.jpeg", plot = grafico, device = "jpeg", width = 8, height = 6, dpi = 300)
-
-
-# Criar gráficos de resíduos parciais para as variáveis do modelo
-
-jpeg("crPlots_M6_ppt_dec.jpeg", width = 800, height = 600)
-
-crPlots(M6.ppt.dec)
-
-dev.off()
-
-####################################
-####### STRUCTURAL DIVERSITY #######
-####################################
-
-# Pacote necessário para manipulação de dados
-if (!require("dplyr")) install.packages("dplyr")
-library(dplyr)
-library(readxl)
-
-data <- read_excel("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/TRABALHO EXCEL/dap.xlsx")
-
-# Função para calcular o coeficiente de Gini
-gini_coefficient <- function(data) {
-  data <- sort(data)  # Ordenar os dados
-  n <- length(data)  # Número de observações
-  mean_value <- mean(data)  # Média dos valores
-  total_diff <- sum(outer(data, data, FUN = function(x, y) abs(x - y)))  # Soma das diferenças absolutas
-  gini <- total_diff / (2 * n^2 * mean_value)  # Cálculo do Gini
-  return(gini)
-}
-
-# Calculando o coeficiente de Gini para cada site
-gini_results <- data %>%
-  group_by(site) %>%                # Agrupa os dados por site
-  summarize(gini = gini_coefficient(dap))  # Calcula o Gini por grupo
-
-# Exibindo os resultados
-print(gini_results)
-gini_results.df <- as.data.frame(gini_results)
-
-# Salvando os resultados
-
-library(writexl)
-write_xlsx(gini_results.df,"C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Análise Estatística/gini.xlsx")
+misto4 <- lmer(log_produt ~ PD_q0 + sespd + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(misto4) 
+r.squaredGLMM(misto4)
+AICc(misto4) 
 
