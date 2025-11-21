@@ -225,7 +225,7 @@ library(ggplot2)
 # All paths are relative to the project root (recommended for GitHub)
 data_scatter_path <- "01 Datasets/01_raw_data/dados_desempenho_semcsa.xlsx"
 data_forest_path  <- "01 Datasets/01_raw_data/dados_desempenho.xlsx"
-output_dir        <- "06 Figures/02 plots"
+output_dir        <- "~/01 Masters_LA/06 Figures/02 plots"
 
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
