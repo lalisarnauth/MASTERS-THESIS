@@ -71,24 +71,17 @@ variaveis_granulometria <- variaveis_granulometria %>%
 # 5) Pretty biplot --------------------------------------------------------
 
 ggplot() +
-  # pontos (sites)
   geom_point(data = scores_sites,
              aes(x = PC1, y = PC2),
              size = 2.8, color = "black") +
-  
-  # labels dos sites (sem repel para ficar mais “clean”, mas dá pra trocar)
   ggrepel::geom_text_repel(
     data = scores_sites,
     aes(x = PC1, y = PC2, label = site),
     size = 3, max.overlaps = Inf
   ) +
-  
-  # vetores das variáveis
   geom_segment(data = variaveis_granulometria,
                aes(x = 0, y = 0, xend = x, yend = y),
                linewidth = 0.6, color = "black") +
-  
-  # labels das variáveis em caixas brancas
   geom_label(
     data = variaveis_granulometria,
     aes(x = x, y = y, label = label),
@@ -97,12 +90,8 @@ ggplot() +
     fill = "white",
     color = "black"
   ) +
-  
-  # eixos centrais
   geom_hline(yintercept = 0, linewidth = 0.4) +
   geom_vline(xintercept = 0, linewidth = 0.4) +
-  
-  # títulos dos eixos com % de variância
   labs(
     title = "Soil texture PCA",
     x = paste0("Axis 1 (", round(var_exp[1], 1), " %)"),
