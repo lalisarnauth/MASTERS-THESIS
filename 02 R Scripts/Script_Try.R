@@ -1,28 +1,30 @@
-## EXPORTANDO DADOS DO TRY ##
+## EXPORTING DATA FROM TRY ##
 
 install.packages("rtry")
 library(rtry)
 
-# Importar o arquivo
-input <- rtry_import("C:/Users/laila/OneDrive/Documentos/2. Mestrado/TRY/33506.txt")
+# Import the TRY file
+input <- rtry_import("C:/Users/laila/OneDrive/Documentos/4. Mestrado_02/TRY/33506.txt")
 
-#Criar um dataframe apenas com as colunas de interesse
-data1 <- rtry_select_col(input,TraitID,SpeciesName,DataID,StdValue,OrigObsDataID,UnitName,ObservationID,Reference)
+# Create a dataframe with only the columns of interest
+data1 <- rtry_select_col(
+  input,
+  TraitID, SpeciesName, DataID, StdValue,
+  OrigObsDataID, UnitName, ObservationID, Reference
+)
 
-
-
-#Selecionar as linhas que contém a densidade da madeira (4)
-#'Transformar em dataframe
+# Convert to dataframe
 dataf <- as.data.frame(data1)
-#' Load dplyr package
+
+# Load dplyr
 library(dplyr)
-#' Using dplyr::filter
+
+# Select only rows corresponding to Wood Density (TraitID = 4)
 DM <- dplyr::filter(dataf, TraitID %in% c("4"))
 
-#Remover colunas que não me interessam
-DM1 <- rtry_remove_col(DM,OrigObsDataID,ObservationID)
+# Remove columns that are not needed
+DM1 <- rtry_remove_col(DM, OrigObsDataID, ObservationID)
 
+# Export the final file
 setwd("C:/Users/laila/OneDrive/Documentos/2. Mestrado/2. Dados")
-write.csv(DM1, file = "DM_Try")
-
-
+write.csv(DM1, file = "DM_Try.csv", row.names = FALSE)
