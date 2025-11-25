@@ -3,7 +3,7 @@
 ### SCRIPT FOR PHYLOGENETIC ANALYSIS ###
 ########################################
 
-# Last update: 2025/11/19 (YYYY/MM/DD)
+# Last update: 2025/11/25 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias
 # Post Graduate Program in Ecology - UFRJ - Brazil
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
@@ -338,9 +338,7 @@ labels_pretty <- c(
   c.n_soloid  = "Soil C/N Ratio"
 )
 
-variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima",
-                 "altitude", "declividade", "silte", "ph", "valor_s", "valor_t",
-                 "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid")
+variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid")
 
 # Create dataframe with X variables
 data_x <- data_filtered %>%
@@ -558,7 +556,7 @@ coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
                                       levels = rev(levels(coef_df_sem_intercepto$term))  # SR no topo
 )
 
-## 6) Coefplot (bolas pretas = significativo)
+## 6) Coefplot 
 p <- ggplot(coef_df_sem_intercepto,
             aes(x = estimate, y = term, fill = significativo)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
@@ -576,7 +574,7 @@ p <- ggplot(coef_df_sem_intercepto,
   labs(x = expression("Standardized regression coefficients ("*beta*" ± 95% CI)"),
        y = "Predictors")
 p
-## 7) Salvar sem cortar nada
+## 7) Savw
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_msel.jpeg",
        plot = p, width = 14, height = 9, units = "cm",
@@ -589,8 +587,7 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_msel.jpeg",
 ################
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE,
-                       sep = ";")
+                       header = TRUE)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
@@ -716,6 +713,32 @@ g
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_pcps1.jpeg", g,
        width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
+
+## PPT Seasonality 
+
+fit <- lm(log_produt ~ season_ppt, data = dadosmisto1)
+summary(fit)
+
+r2  <- summary(fit)$r.squared
+p   <- coef(summary(fit))["season_ppt", "Pr(>|t|)"]
+
+subtxt <- sprintf("R\u00B2 = %.2f; p = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+
+g <- ggplot(dadosmisto1, aes(season_ppt, log_produt)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE, colour = "lightblue") +
+  labs(
+    x = "PPT Seasonality",
+    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    subtitle = subtxt
+  ) +
+  theme_minimal(base_size = 11)
+g
+
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_season_ppt.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 
 ### FACET WRAP ###

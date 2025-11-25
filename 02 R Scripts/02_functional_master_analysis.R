@@ -3,11 +3,10 @@
 ### SCRIPT FOR FUNCTIONAL ANALYSIS ###
 ######################################
 
-# last update: 2025/11/20 (YYYY/MM/DD)
+# last update: 2025/11/25 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias
 # Post Graduate Program in Ecology - UFRJ - Brazil
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
-
 
 
 # Load all packages
@@ -163,16 +162,73 @@ for (attr in atributos) {
 # === Save archive ===
 saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_REGUA.xlsx", overwrite = TRUE)
 
-########################
-### MULTICOLINEARITY ###
-########################
 
+##########################################
+##### CORRELATION MATRIX: FUNCTIONAL #####
+##### INDEPENDENT VARIABLES FROM FILE ####
+##########################################
 
-library(car)
+# Load required packages
+library(readxl)
+library(tidyverse)
+library(corrplot)
 
+# Read Excel file
+functional_data <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/reg_funcional.csv", header = TRUE)
 
+# Inspect columns
+colnames(functional_data)
 
+# Define independent variables')
 
+variables_func <- c("fdis", "fric", "fdiv",
+                    "cwm_wd", "cwm_sla", "cwm_ldmc",
+                    "fdis_wd", "fric_wd", "fdis_sla", "fric_sla",
+                    "fdis_ldmc", "fric_ldmc", "SR", "SESPD","PSEab", "dcF", "dcP")
+
+# Create a dataframe with only these variables
+data_func <- functional_data %>%
+  dplyr::select(all_of(variables_func))
+
+# Optional: Define pretty labels for plot
+labels_pretty_func <- c(
+  fdis        = "Functional Dispersion",
+  fric        = "Functional Richness",
+  fdiv        = "Functional Divergence",
+  cwm_wd      = "CWM Wood Density",
+  cwm_sla     = "CWM SLA",
+  cwm_ldmc    = "CWM LDMC",
+  fdis_wd     = "FDis Wood Density",
+  fric_wd     = "FRic Wood Density",
+  fdis_sla    = "FDis SLA",
+  fric_sla    = "FRic SLA",
+  fdis_ldmc   = "FDis LDMC",
+  fric_ldmc   = "FRic LDMC",
+  SR          = "Species Richness",
+  SESPD       = "sesPD",
+  PSEab       = "PSE",
+  dcF         = "dcF",
+  dcP         = "dcP"
+)
+
+# Compute correlation matrix
+cor_matrix_func <- cor(data_func, use = "complete.obs")
+
+# Replace row and column names with pretty labels
+rownames(cor_matrix_func) <- labels_pretty_func[variables_func]
+colnames(cor_matrix_func) <- labels_pretty_func[variables_func]
+
+# Plot correlation matrix
+png("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/correlation_matrix_functional.png",
+    width = 1400, height = 1000, res = 150)
+
+corrplot(cor_matrix_func,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.7)
+
+dev.off()
 
 ##########
 ## GLMS ##
@@ -288,8 +344,11 @@ t2 <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg
 summary(t2) # p-value = 0.1069
 
 # FDis only
-m_fdis <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc, data = dadosreg)
+m_fdis <- lm(log_produt ~ fdis_ldmc + fdis_wd, data = dadosreg)
 summary(m_fdis)
+
+m_fdis <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc, data = dadosreg)
+summary(m_fdis) # p-value = 0.01161 *
 
 # FRic only
 m_fric <- lm(log_produt ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
