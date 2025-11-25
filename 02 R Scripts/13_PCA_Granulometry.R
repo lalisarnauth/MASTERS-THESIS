@@ -31,7 +31,6 @@ scores_sites <- granulometria %>%
     as.data.frame(pca_resultado$x)[, c("PC1", "PC2")]
   )
 
-
 # 4) Loadings (vectors of variables) --------------------------------------
 
 loadings <- as.data.frame(pca_resultado$rotation[, c("PC1", "PC2")])
@@ -108,3 +107,17 @@ ggplot() +
 ggsave(filename = "~/01 Masters_LA/06 Figures/02 plots/PCA_granulometria.jpeg", width = 8, height = 6, dpi = 300)
 
 
+###
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
+                       header = TRUE)
+dadosmisto <- dadosmisto %>%
+  rename(
+    PC1gran = PC1,
+    PC2gran = PC2
+  )
+ 
+write.csv(
+  dadosmisto,
+  file = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/dadosmisto.csv",
+  row.names = FALSE
+)

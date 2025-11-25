@@ -335,7 +335,8 @@ labels_pretty <- c(
   PC2nutri    = "Nutrients PC2",
   season_temp = "Temp Seasonality",
   season_ppt  = "PPT Seasonality",
-  c.n_soloid  = "Soil C/N Ratio"
+  c.n_soloid  = "Soil C/N Ratio",
+  
 )
 
 variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid")
@@ -368,8 +369,7 @@ dev.off()
 ##########################
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE,
-                       sep = ";")
+                       header = TRUE)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
@@ -476,7 +476,9 @@ r.squaredGLMM(m17) # 0.5741846
 AICc(m17) # 66.78168
 ### NEW BEST MODEL
 
-##### MULTICOLINEARITY ########
+##########################
+#### MULTICOLINEARITY ####
+##########################
 
 # install.packages("car")
 
@@ -713,6 +715,18 @@ g
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_pcps1.jpeg", g,
        width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
+##
+
+ggplot(dadosmisto1, aes(x = pcps1, y = log_produt, color = site)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE, color = "black") +
+  theme_classic(base_size = 14) +
+  labs(
+    title = "Relationship between PCPS1 and productivity",
+    x = "PCPS1 (phylogenetic composition)",
+    y = "log(productivity)"
+  )
+
 
 ## PPT Seasonality 
 

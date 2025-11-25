@@ -345,10 +345,10 @@ summary(t2) # p-value = 0.1069
 
 # FDis only
 m_fdis <- lm(log_produt ~ fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m_fdis)
-
-m_fdis <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc, data = dadosreg)
 summary(m_fdis) # p-value = 0.01161 *
+
+m_fdis <- lm(log_produt ~ fdis_sla + fdis_wd, data = dadosreg)
+summary(m_fdis)
 
 # FRic only
 m_fric <- lm(log_produt ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
@@ -392,8 +392,6 @@ ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
   geom_smooth(method = "lm", se = TRUE) +
   theme_classic() +
   labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
-
-
 
 
 # Panel A – Mass-ratio (CWM LDMC)
