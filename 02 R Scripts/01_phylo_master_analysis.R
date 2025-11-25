@@ -9,7 +9,6 @@
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
 
 
-
 # Load all packages
 
 library(readr)
@@ -258,8 +257,7 @@ write_xlsx(data_diversity,
 ########################
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                                 header = TRUE,
-                                 sep = ";")
+                                 header = TRUE)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
@@ -320,20 +318,16 @@ dadosmisto1 <- dadosmisto[-c(1:7), ] # WITHOUT CSA
 
 variaveis_x <- c("SR","unbias.simp","shannon","SESPDab", "SESMPDab", 
                  "SESMNTDab", "PSV", "PSR", "PSEab", "PSC","ppt", 
-                 "tmax", "tmin", "pet", "vpd","mcwd","PC1_clima","altitude","declividade",
-                 "silte","ph","valor_s","valor_t","PC1nutri","PC2nutri","pcps1ab","pcps2ab","faba","PD_q0")
-
-variaveis_x <- c("SR","silte","pcps1ab","PD_q0","declividade")
+                 "tmax", "tmin", "pet", "vpd","mcwd","PC1_clima","altitude","declividade","silte","ph","valor_s","valor_t","PC1nutri","PC2nutri","pcps1ab","pcps2ab","faba","PD_q0")
 
 variaveis_x <- c("SR","SESPDab", "SESMPDab", 
                  "SESMNTDab", "pcps1ab","pcps2ab","faba","PD_q0")
 
-variaveis_x <- c("ppt","tmax", "tmin", "pet", "vpd","mcwd","PC1_clima","altitude","declividade",
-                 "silte","ph","valor_s","valor_t","PC1nutri","PC2nutri")
+variaveis_x <- c("ppt","tmax", "tmin", "pet", "vpd","mcwd","PC1_clima","altitude","declividade","silte","ph","valor_s","valor_t","PC1nutri","PC2nutri","season_temp","season_ppt","c.n_soloid")
 
 # Creating a new dataframe containing only the X variables.
 dados_x <- dadosmisto1 %>%
-  select(all_of(variaveis_x))
+  dplyr::select(all_of(variaveis_x))
 
 # Calculating the correlation matrix with the dataframe dados_x
 cor_matrix_x <- cor(dados_x, use = "complete.obs")
@@ -438,6 +432,28 @@ anova(modelo_nulo, m13) # p-value = 0.577
 r.squaredGLMM(m13) # 0.5142692
 AICc(m13) # 81.51027
 
+m14 <- lmer(log_produt ~ season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m14) # p-value = 0.0387 * 
+r.squaredGLMM(m14) # 0.5231383
+AICc(m14) # 76.82315
+
+m15 <- lmer(log_produt ~ season_temp + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m15) # p-value = 0.408
+r.squaredGLMM(m15) # 0.5237957
+AICc(m15) # 80.57329
+
+m16 <- lmer(log_produt ~ c.n_soloid + sr + pcps1 + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m16) 
+anova(modelo_nulo, m16) # p-value = error
+r.squaredGLMM(m16) # 0.5667528
+AICc(m16) # 66.55721
+
+m17 <- lmer(log_produt ~ sr + pcps1 + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m17) 
+anova(modelo_nulo, m17) # p-value = error
+r.squaredGLMM(m17) # 0.5741846
+AICc(m17) # 66.78168
+### NEW BEST MODEL
 
 ##### MULTICOLINEARITY ########
 
