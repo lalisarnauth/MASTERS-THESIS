@@ -1,4 +1,6 @@
-#### Fabaceae
+#### Fabaceae ####
+
+library(readr)
 
 example <- read_csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/filogenia_total.csv")
 View(example)
@@ -8,7 +10,7 @@ fab_species <- example %>%
   distinct(species)
 fab_species # 34
 
-fab <- read.table("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/fabacea_nfix.txt",
+fab <- read.table("~/0b1 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/fabacea_nfix.txt",
                   header = TRUE,
                   sep = ",",
                   stringsAsFactors = FALSE)
@@ -44,3 +46,46 @@ ggsave(
   "~/01 Masters_LA/06 Figures/02 plots/fabaceae_nfix_barplot.jpeg",
   g_fix, width = 6, height = 4, dpi = 300
 )
+
+###############################################
+#### OTHER IMPORTANT FAMILIES FOR THE PCPS ###
+###############################################
+
+example <- read_csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/filogenia_total.csv")
+View(example)
+
+unique(example$family)
+
+bor_species <- example %>% 
+  filter(family == "Boraginaceae") %>% 
+  distinct(species)
+bor_species # 1
+
+lecy_species <- example %>% 
+  filter(family == "Lecythidaceae") %>% 
+  distinct(species)
+lecy_species # 1
+
+sol_species <- example %>% 
+  filter(family == "Solanaceae") %>% 
+  distinct(species)
+sol_species # 1
+
+library(dplyr)
+
+pos_spp_pcps <- example %>%
+  filter(family %in% c(
+    "Boraginaceae",
+    "Lecythidaceae",
+    "Solanaceae",
+    "Apocynaceae",
+    "Bignoniaceae",
+    "Asteraceae",
+    "Sapindaceae",
+    "Myrtaceae",
+    "Anacardiaceae"
+  ))
+
+write.csv(pos_spp_pcps,file = "~/01 Masters_LA/01 Research Plan/07 Meetings & related/spp_pcps1.csv")
+
+  
