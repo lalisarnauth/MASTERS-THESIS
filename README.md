@@ -12,8 +12,8 @@ The repository includes raw and processed spreadsheets and R scripts. Large raw 
 This folder contains the datasets used in the analyses.
 
 01 Datasets/
- - 01_raw_data/            # Raw field measurements (species, traits, biomass, etc.)
- - 02_processed_data/      # Cleaned and standardized datasets used in the models
+ - 01_raw_data/            # Raw measurements used in the analysis
+ - 02_processed_data/      # Products of R manipulation
  - 04_original_data/       # Original files from fieldwork; not used directly in analyses
 
 ---
@@ -37,7 +37,7 @@ Others scripts are some steps to the final analysis. See explanation below.
   Complete functional diversity workflow  
   (trait processing, standardization, CWM, FDis, PCA, decoupled effects, diversity–productivity models).
 
-Each master script consolidates the final, validated components of the analyses. Whenever an analysis is updated, the final code is added to these master files.There are some other files with intermediate steps.
+Each master script (01 and 02) consolidates the final, validated components of the analyses. Whenever an analysis is updated, the final code is added to these master files.There are some other files with intermediate steps that are not included into these master files.
 
 ---
 
