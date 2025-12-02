@@ -87,26 +87,28 @@ summary(fit_finalB, standardized = TRUE, fit.measures = TRUE)
 
 model_C <- '
   ############################
-  # Climate affects phylogenetic structure
-  ############################
-  sr    ~ faba + season_ppt
-  pcps1 ~ pse + faba + season_ppt
-
-  ############################
   # Climate → Soil
   ############################
   c.n_soloid ~ season_ppt
 
   ############################
-  # Biomass accumulation
+  # Soil influences structure
   ############################
-  log_produt ~ sr + pcps1 + c.n_soloid + season_ppt
+  sr    ~ c.n_soloid + season_ppt
+  pcps1 ~ pse + faba
+
+  ############################
+  # Biomass drivers
+  ############################
+  log_produt ~ sr + pcps1 + c.n_soloid + season_ppt + faba
 
   ############################
   # Correlated exogenous
   ############################
   faba ~~ pse
+  season_ppt ~~ faba + pse
 '
+
 fit_finalC <- sem(
   model = model_C,
   data  = dados_scaled,
@@ -114,3 +116,37 @@ fit_finalC <- sem(
 )
 
 summary(fit_finalC, standardized = TRUE, fit.measures = TRUE)
+
+# ---- Model D ----
+
+model_D <- '
+  ############################
+  # Climate → Soil
+  ############################
+  c.n_soloid ~ season_ppt
+
+  ############################
+  # Soil influences structure
+  ############################
+  sr    ~ faba + c.n_soloid
+  pcps1 ~ season_ppt
+
+  ############################
+  # Biomass drivers
+  ############################
+  log_produt ~ sr + pcps1 + c.n_soloid + season_ppt
+
+  ############################
+  # Correlated exogenous
+  ############################
+  faba ~~ pse
+  season_ppt ~~ faba + pse
+'
+
+fit_finalD <- sem(
+  model = model_D,
+  data  = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_finalD, standardized = TRUE, fit.measures = TRUE)
