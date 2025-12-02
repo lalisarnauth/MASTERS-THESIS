@@ -368,6 +368,8 @@ dev.off()
 ### LINEAR MIXED MODEL ###
 ##########################
 
+#LMM
+
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE)
 
