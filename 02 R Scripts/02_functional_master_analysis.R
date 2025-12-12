@@ -565,7 +565,7 @@ g <- dadosreg %>%
   labs(
     x = "FRic - Leaf Dry Matter Content (LDMC)",
     y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
-    title = "The Relationship between Functional Richness and Productivity"
+    title = "The Relationship between Functional Richness and Biomass"
   ) +
   annotate("text", 
            x = max(dadosreg$fric_ldmc, na.rm = TRUE) * 0.45, 
@@ -603,7 +603,7 @@ g <- dadosreg %>%
   labs(
     x = "FDis - Leaf Dry Matter Content (LDMC)",
     y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
-    title = "The Relationship between Functional Richness and Productivity"
+    title = "The Relationship between Functional Richness and Biomass"
   ) +
   annotate("text", 
            x = max(dadosreg$fric_ldmc, na.rm = TRUE) * 0.1, 
@@ -618,6 +618,43 @@ g
 # Salvar
 ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
+## SR ##
+
+# Fit the model
+fit <- lm(log_produt ~ SR, data = dadosreg)
+summary(fit)
+
+# Extract R² e p-value
+r2 <- summary(fit)$r.squared
+p  <- coef(summary(fit))["SR", "Pr(>|t|)"]
+
+# Text
+subtxt <- sprintf("R² = %.2f\np = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+# plot
+g <- dadosreg %>%
+  ggplot(aes(SR, log_produt)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = TRUE, colour = "orange") +
+  labs(
+    x = "Species Richness",
+    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
+    title = "The Relationship between Species Richness and Biomass"
+  ) +
+  annotate("text", 
+           x = max(dadosreg$SR, na.rm = TRUE) * 0.28, 
+           y = max(dadosreg$log_produt, na.rm = TRUE) * 1.002, 
+           label = subtxt, 
+           hjust = 1, vjust = 1,
+           size = 3.5) +
+  theme_minimal(base_size = 11)
+
+g
+
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/SR.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 ## CWM LDMC ##
 
