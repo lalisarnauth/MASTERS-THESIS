@@ -541,7 +541,7 @@ AICc(c1)                 # 69.51542
 #############
 
 ## =============== ##
-##  Coefplot m11   ##  
+##  Coefplot m17   ##  
 ## =============== ##
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
@@ -553,35 +553,31 @@ dadosmisto1 <- dadosmisto[-c(1:7), ]
 ## 1) Standardizing variables (mean = 0, sd = 1)
 
 dados_std <- dadosmisto1
-dados_std$c.n_soloid <- scale(dadosmisto1$c.n_soloid)
+dados_std$season_ppt <- scale(dadosmisto1$season_ppt)
 dados_std$SR         <- scale(dadosmisto1$sr)
 dados_std$silte      <- scale(dadosmisto1$silte)
-dados_std$pcps1ab    <- scale(dadosmisto1$pcps1)
+dados_std$pcps1    <- scale(dadosmisto1$pcps1)
 
 
 ## 2) Run standardized model
 
-m12_std <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
+m17_std <- lmer(log_produt ~ season_ppt + SR + pcps1 + (1 | site),
                 data = dados_std, REML = FALSE)
 
-summary(m12_std)
+summary(m17_std)
 
 ## 3) Extract coefficients + IC95% of the stand. model
-coef_df <- tidy(m11_std, effects = "fixed", conf.int = TRUE)
+coef_df <- tidy(m17_std, effects = "fixed", conf.int = TRUE)
 
 ## 4) Remove intercept and add significant p-value
 coef_df_sem_intercepto <- subset(coef_df, term != "(Intercept)")
 coef_df_sem_intercepto$significativo <- ifelse(coef_df_sem_intercepto$p.value < 0.05,
                                                "Significant", "Non-significant")
 
-## 5) Labels and desirable order (SR → PCPS1 → C:N → Silt)
+## 5) Labels and desirable order
 coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
-                                      levels = c("SR","pcps1ab","c.n_soloid","silte"),
-                                      labels = c("Species richness (SR)",
-                                                 "Phylogenetic composition (PCPS1)",
-                                                 "Soil C:N ratio",
-                                                 "Silt (%)")
-)
+                                      levels = c("SR","pcps1","season_ppt"),
+                                      labels = c("Species richness (SR)","Phylogenetic composition (PCPS1)", "PPT Seasonality"))
 coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
                                       levels = rev(levels(coef_df_sem_intercepto$term))  # SR no topo
 )
@@ -590,8 +586,12 @@ coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
 p <- ggplot(coef_df_sem_intercepto,
             aes(x = estimate, y = term, fill = significativo)) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
-                 height = 0.22, color = "black") +
+  geom_errorbar(
+    aes(xmin = conf.low, xmax = conf.high),
+    height = 0.22,
+    color = "black",
+    orientation = "y"
+  ) +
   geom_point(size = 3, shape = 21, color = "black", stroke = 1) +
   scale_fill_manual(values = c("Significant" = "black",
                                "Non-significant" = "white")) +
@@ -604,9 +604,9 @@ p <- ggplot(coef_df_sem_intercepto,
   labs(x = expression("Standardized regression coefficients ("*beta*" ± 95% CI)"),
        y = "Predictors")
 p
-## 7) Savw
+## 7) Save
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_msel.jpeg",
+ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_m17.jpeg",
        plot = p, width = 14, height = 9, units = "cm",
        dpi = 600, bg = "white", limitsize = FALSE)
 
