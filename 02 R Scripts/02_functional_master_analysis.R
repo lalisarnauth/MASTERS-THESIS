@@ -234,7 +234,7 @@ dev.off()
 ## GLMS ##
 ##########
 
-dadosreg <- read_excel("01 Datasets/01_raw_data/reg_funcional.xlsx")
+dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/reg_funcional.csv", header = TRUE)
 
 #### CARBON ACCUMULATION (LOG_PRODUT) ####
 
@@ -337,7 +337,7 @@ summary(produt.PSEab) # p-value: 0.2861
 # Multiple variables
 
 t <- lm(log_produt~cwm_ldmc+cwm_wd,data = dadosreg)
-summary(t) # p-value: 0.044
+summary(t) # p-value: 0.044 *
 AICc(t)
 
 t2 <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
@@ -347,7 +347,7 @@ summary(t2) # p-value = 0.1069
 m_fdis <- lm(log_produt ~ fdis_ldmc + fdis_wd, data = dadosreg)
 summary(m_fdis) # p-value = 0.01161 *
 
-m_fdis <- lm(log_produt ~ fdis_sla + fdis_wd, data = dadosreg)
+m_fdis <- lm(log_produt ~ fdis_sla + fdis_ldmc + fdis_wd, data = dadosreg)
 summary(m_fdis)
 
 # FRic only

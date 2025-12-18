@@ -504,6 +504,7 @@ m22 <- lmer(log_produt ~ gini + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(m22) # p-value = <2e-16 ***
 AICc(m22) # 10.6945
 
+
 ##########################
 #### MULTICOLINEARITY ####
 ##########################
