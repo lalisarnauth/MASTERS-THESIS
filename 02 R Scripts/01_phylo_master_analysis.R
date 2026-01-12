@@ -371,7 +371,7 @@ dev.off()
 # LMM
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE)
+                       header = TRUE,row.names = 1)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
@@ -482,7 +482,6 @@ summary(m17)
 anova(modelo_nulo, m17) # p-value = error
 r.squaredGLMM(m17) # 0.5741846
 AICc(m17) # 66.78168
-### NEW BEST MODEL
 
 m18 <- lmer(log_produt ~ altitude + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(m18) 
@@ -504,6 +503,43 @@ m22 <- lmer(log_produt ~ gini + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(m22) # p-value = <2e-16 ***
 AICc(m22) # 10.6945
 
+m18 <- lmer(log_produt ~ wd_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m18) # p-value = 0.736
+r.squaredGLMM(m18) # 0.5157152
+AICc(m18) # 81.7205
+
+m19 <- lmer(log_produt ~ ldmc_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m19) # p-value = 0.758
+r.squaredGLMM(m19) # 0.5056135
+AICc(m19) # 81.74262
+
+m20 <- lmer(log_produt ~ wd_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m20) # p-value = 0.758
+r.squaredGLMM(m20) # 0.5056135
+AICc(m20) # 81.74262
+
+m21 <- lmer(log_produt ~ ldmc_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m21) # p-value = 0.587
+r.squaredGLMM(m21) # 0.5225871
+AICc(m21) # 81.54102
+
+teste <- lmer(pcps1 ~ ldmc_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(teste)
+
+teste <- lmer(pse ~ ldmc_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(teste) # p=0.00501 **
+
+teste <- lmer(sespd ~ ldmc_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(teste) # p=0.02711 *
+
+teste <- lmer(sespd ~ wd_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(teste) # p=0.5128
+
+msel <- lmer(log_produt ~ pcps1 + n_trees + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(msel) 
+r.squaredGLMM(msel) # 0.6393313
+AICc(msel) # 60.59433
+### NEW BEST MODEL
 
 ##########################
 #### MULTICOLINEARITY ####
@@ -800,7 +836,6 @@ g <- dadosmisto1 %>%
 ggsave("~/01 Masters_LA/06 Figures/02 plots/facetwrap_SR.jpeg",
        plot = g,
        width = 13, height = 10, units = "cm", dpi = 600, bg = "white")
-
 
 ############################
 ### Plot Partial Effects ###
