@@ -25,9 +25,8 @@ library(stringr)
 
 library(plotly) # Masks dplyr filter()
 
-##############################
+
 #### FUNCTIONAL MICO-LEÃO ####
-##############################
 
 # Read data
 comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
@@ -49,7 +48,7 @@ resultado_fd_ml <- dbFD(
   corr = "cailliez"
 )
 
-# === Create Excel e with tabs ===
+# ---- Create Excel e with tabs ----
 wb <- createWorkbook()
 
 # Add each metric
@@ -65,7 +64,7 @@ writeData(wb, "FDiv_Combinado", resultado_fd_ml$FDiv)
 addWorksheet(wb, "CWM_por_atributo")
 writeData(wb, "CWM_por_atributo", resultado_fd_ml$CWM)
 
-# === FD for each trait (no CWM) ===
+# ---- FD for each trait (no CWM) ----
 for (attr in atributos) {
   cat("Calculando para:", attr, "\n")
   dados_attr <- funcional_ml[, attr, drop = FALSE]
@@ -93,9 +92,9 @@ for (attr in atributos) {
 # === Save archive ===
 saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_MicoLeao.xlsx", overwrite = TRUE)
 
-##########################
+
+
 #### FUNCTIONAL REGUA ####
-##########################
 
 # Read data
 comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
@@ -163,10 +162,10 @@ for (attr in atributos) {
 saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_REGUA.xlsx", overwrite = TRUE)
 
 
-##########################################
+
 ##### CORRELATION MATRIX: FUNCTIONAL #####
 ##### INDEPENDENT VARIABLES FROM FILE ####
-##########################################
+
 
 # Load required packages
 library(readxl)
@@ -230,11 +229,11 @@ corrplot(cor_matrix_func,
 
 dev.off()
 
-##########
-## GLMS ##
-##########
 
-dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/reg_funcional.csv", header = TRUE)
+# ---- GLMS ----
+
+
+dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
 
 #### CARBON ACCUMULATION (LOG_PRODUT) ####
 
@@ -299,6 +298,21 @@ produt.fric_ldmc <- lm(log_produt~fric_ldmc,data = dadosreg)
 summary(produt.fric_ldmc) # p-value: 0.0301 * 
 residuos_fric_ldmc <- residuals(produt.fric_ldmc)
 shapiro.test(residuos_fric_ldmc) #NORMAL
+
+produt.fdis <- lm(log_produt~raoq,data = dadosreg)
+summary(produt.fdis) # p-value: 0.39     
+residuos_fdis <- residuals(produt.fdis)
+shapiro.test(residuos_fdis) #NORMAL
+
+produt.raoqsla <- lm(log_produt~RaoQ_SLA,data = dadosreg)
+summary(produt.raoqsla) # p-value: 0.536     
+residuos_fdis <- residuals(produt.raoqsla)
+shapiro.test(residuos_fdis) #NORMAL
+
+produt.raoqldmc <- lm(log_produt~RaoQ_LDMC,data = dadosreg)
+summary(produt.raoqldmc) # p-value: 0.0302 *      
+residuos_raoqldmc <- residuals(produt.raoqldmc)
+shapiro.test(residuos_raoqldmc) #NORMAL
 
 # Taxonomic diversity
 produt.SR <- lm(log_produt~SR,data = dadosreg)
@@ -377,9 +391,9 @@ summary(s)
 ss <- lm(log_produt~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
 summary(ss)
 
-############
-### Plot ###
-############
+
+# ---- Plot ----
+
 
 ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
   geom_point(size = 3) +
@@ -440,9 +454,9 @@ library(patchwork)
 p1 + p2
 
 
-###############
-### 3D PLOT ###
-###############
+
+# ---- 3D PLOT ----
+
 
 # install.packages("plotly")
 
@@ -540,9 +554,9 @@ modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis ==
 summary(modelo_ml) # not significant
 summary(modelo_regua) # not significant
  
-########################
-### INDIVIDUAL PLOTS ###
-########################
+
+# ---- INDIVIDUAL PLOTS ----
+
 
 # Fit the model
 fit <- lm(log_produt ~ fric_ldmc, data = dadosreg)
@@ -693,12 +707,11 @@ g <- dadosreg %>%
 
 g
 
-################
-### COEFPLOT ###
-################
+
+# ---- COEFPLOT ----
 
 
-# ---------- 1) PREDICTORS ----------
+# 1) PREDICTORS
 preds <- c("SR",
            "fdis","fric","fdiv",
            "cwm_wd","cwm_sla","cwm_ldmc",
@@ -723,7 +736,7 @@ pretty_lab <- c(
   fric_ldmc    = "FRic — LDMC"
 )
 
-# ---------- 2) Adjust and extract DF ----------
+# 2) Adjust and extract DF
 fit_and_tidy <- function(var, dat) {
   form <- as.formula(paste0("log_produt ~ ", var))
   fit  <- lm(form, data = dat)
@@ -743,7 +756,7 @@ fit_and_tidy <- function(var, dat) {
   )
 }
 
-# ---------- 3) COEFICIENTS TABLE ----------
+# 3) COEFICIENTS TABLE
 coef_tab <- map_dfr(preds, fit_and_tidy, dat = dadosreg) %>%
   mutate(label      = pretty_lab[predictor],
          is_ldmc    = str_detect(predictor, "ldmc"),
@@ -755,7 +768,7 @@ coef_tab <- coef_tab %>%
   arrange(estimate) %>%
   mutate(label_plot = factor(label_plot, levels = label_plot))
 
-# ---------- 4) PLOT ----------
+# 4) PLOT 
 g_coef <- ggplot(coef_tab,
                  aes(x = estimate, y = label_plot)) +
   geom_vline(xintercept = 0, linetype = 2, color = "gray70") +
@@ -781,9 +794,8 @@ g_coef
 ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/coefplot_produt_raw.jpeg", g_coef, width = 16, height = 11, units = "cm", dpi = 600)
 
 
-######################################
-### PHYLOGENETIC SIGNAL FOR TRAITS ###
-######################################
+
+# ---- PHYLO SIGNAL FOR TRAITS ----
 
 ## ASSEMBLE THE TREE ONLY WITH THE ML AND REGUA SPECIES
 
@@ -812,9 +824,8 @@ resultado <- multiPhylosignal(dados[, c("WD", "SLA", "LDMC")], tree_teste)
 # LDMC - SINAL FORTE
 
 
-###----------------------
-#    DECOUPLED EFFECTS
-###----------------------
+# ---- DECOUPLED EFFECTS ----
+
 
 # Load required packages
 library(devtools)
@@ -876,13 +887,178 @@ r.squaredGLMM(modelo_dcP)
 AICc(modelo_dcF)
 AICc(modelo_dcP)
 
+# ---- RaoQ ----
+
+library(tidyverse)
+library(cluster)   # daisy() - Gower distance
+library(openxlsx)
+
+#### RaoQ ML ####
 
 
+# Read data
+comunidade_ml <- read.csv(
+  "01 Datasets/01_raw_data/comunidade_ml.csv",
+  row.names = 1, sep = ";", check.names = FALSE
+)
+
+funcional_ml <- read.csv(
+  "01 Datasets/01_raw_data/funcional_ml.csv",
+  row.names = 1, sep = ";"
+)
+
+# Select traits
+atributos <- c("WD", "SLA", "LDMC")
+traits_ml <- funcional_ml[, atributos]
+
+# Keep only common species
+spp_ml <- intersect(colnames(comunidade_ml), rownames(traits_ml))
+com_ml <- comunidade_ml[, spp_ml]
+traits_ml <- traits_ml[spp_ml, ]
+
+# Standardize traits
+traits_ml <- scale(traits_ml)
+
+# Relative abundance
+relab_ml <- com_ml / rowSums(com_ml)
+
+# --- RaoQ COMBINED ---
+dist_ml <- as.matrix(daisy(traits_ml, metric = "gower"))
+
+raoq_ml <- apply(relab_ml, 1, function(p) {
+  as.numeric(t(p) %*% dist_ml %*% p)
+})
+
+raoq_ml_df <- data.frame(
+  site = names(raoq_ml),
+  raoq = as.numeric(raoq_ml))
 
 
+# --- RaoQ BY TRAIT ---
+raoq_ml_traits <- data.frame(Plot = rownames(com_ml))
+
+for (tr in atributos) {
+  
+  tr_mat <- scale(traits_ml[, tr, drop = FALSE])
+  d_tr <- as.matrix(daisy(tr_mat, metric = "gower"))
+  
+  rao_tr <- apply(relab_ml, 1, function(p) {
+    as.numeric(t(p) %*% d_tr %*% p)
+  })
+  
+  raoq_ml_traits[[paste0("RaoQ_", tr)]] <- rao_tr
+}
+
+raoq_ml_traits_df <- raoq_ml_traits %>%
+  rename(site = Plot)
 
 
+# --- Save Excel ---
+wb_ml <- createWorkbook()
 
+addWorksheet(wb_ml, "RaoQ_Combinado")
+writeData(wb_ml, "RaoQ_Combinado",
+          data.frame(Plot = names(raoq_ml), RaoQ = raoq_ml))
+
+addWorksheet(wb_ml, "RaoQ_por_trait")
+writeData(wb_ml, "RaoQ_por_trait", raoq_ml_traits)
+
+saveWorkbook(
+  wb_ml,
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/Resultados_RaoQ_ML.xlsx",
+  overwrite = TRUE
+)
+
+#### RaoQ REGUA ####
+
+# Read data
+comunidade_regua <- read.csv(
+  "01 Datasets/01_raw_data/comunidade_regua.csv",
+  row.names = 1, sep = ";", check.names = FALSE
+)
+
+funcional_regua <- read.csv(
+  "01 Datasets/01_raw_data/funcional_regua.csv",
+  row.names = 1, sep = ";"
+)
+
+# Select traits
+atributos <- c("WD", "SLA", "LDMC")
+traits_rg <- funcional_regua[, atributos]
+
+# Keep only common species
+spp_rg <- intersect(colnames(comunidade_regua), rownames(traits_rg))
+com_rg <- comunidade_regua[, spp_rg]
+traits_rg <- traits_rg[spp_rg, ]
+
+# Standardize traits
+traits_rg <- scale(traits_rg)
+
+# Relative abundance
+relab_rg <- com_rg / rowSums(com_rg)
+
+# --- RaoQ COMBINED ---
+dist_rg <- as.matrix(daisy(traits_rg, metric = "gower"))
+
+raoq_rg <- apply(relab_rg, 1, function(p) {
+  as.numeric(t(p) %*% dist_rg %*% p)
+})
+
+raoq_rg_df <- data.frame(
+  site = names(raoq_rg),
+  raoq = as.numeric(raoq_rg))
+
+
+# --- RaoQ BY TRAIT ---
+raoq_rg_traits <- data.frame(Plot = rownames(com_rg))
+
+for (tr in atributos) {
+  
+  tr_mat <- scale(traits_rg[, tr, drop = FALSE])
+  d_tr <- as.matrix(daisy(tr_mat, metric = "gower"))
+  
+  rao_tr <- apply(relab_rg, 1, function(p) {
+    as.numeric(t(p) %*% d_tr %*% p)
+  })
+  
+  raoq_rg_traits[[paste0("RaoQ_", tr)]] <- rao_tr
+}
+
+raoq_rg_traits_df <- raoq_rg_traits %>%
+  rename(site = Plot)
+
+
+# --- Save Excel ---
+wb_rg <- createWorkbook()
+
+addWorksheet(wb_rg, "RaoQ_Combinado")
+writeData(wb_rg, "RaoQ_Combinado",
+          data.frame(Plot = names(raoq_rg), RaoQ = raoq_rg))
+
+addWorksheet(wb_rg, "RaoQ_por_trait")
+writeData(wb_rg, "RaoQ_por_trait", raoq_rg_traits)
+
+saveWorkbook(
+  wb_rg,
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/Resultados_RaoQ_REGUA.xlsx",
+  overwrite = TRUE
+)
+
+## Bind ML + REGUA ##
+
+raoq_all <- bind_rows(raoq_ml_df, raoq_rg_df)
+raoq_traits_all <- bind_rows(raoq_ml_traits_df, raoq_rg_traits_df)
+
+dadosreg <- dadosreg %>%
+  left_join(raoq_all %>% select(site, raoq), by = "site")
+
+dadosreg <- dadosreg %>%
+  left_join(
+    raoq_traits_all %>% select(site, starts_with("RaoQ_")),
+    by = "site"
+  )
+
+write.csv(dadosreg,file="~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv")
 
 ####### Not used anymore ############
 
