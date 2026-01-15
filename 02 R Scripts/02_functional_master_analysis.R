@@ -394,167 +394,6 @@ summary(ss)
 
 # ---- Plot ----
 
-
-ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  theme_classic() +
-  labs(x = "CWM LDMC", y = "Log(Biomass/age)", color = "Site")
-
-ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  theme_classic() +
-  labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
-
-
-# Panel A – Mass-ratio (CWM LDMC)
-p1 <- ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "CWM LDMC", y = "Log(Biomass/age)", color = "Site",
-       title = "(a) Mass-ratio effect (CWM)") +
-  theme_classic() +
-  theme(legend.position = "top")
-
-# Panel B – Complementarity (FDis LDMC)
-p2 <- ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "FDis LDMC", y = NULL, color = "Site",
-       title = "(b) Complementarity effect (FD)") +
-  theme_classic() +
-  theme(legend.position = "none")   # shared legend from p1
-
-# Combine
-p1 + p2
-
-####### Effect plots for each variable #######
-
-# Get partial predictions (controlling for the other variable)
-eff_ldmc <- ggpredict(t, terms = "cwm_ldmc")
-eff_wd   <- ggpredict(t, terms = "cwm_wd")
-
-# Plot both effects side by side
-p1 <- ggplot(eff_ldmc, aes(x, predicted)) +
-  geom_line(linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  labs(x = "CWM LDMC", y = "Predicted log(Biomass/age)",
-       title = "(a) Effect of CWM LDMC") +
-  theme_classic()
-
-p2 <- ggplot(eff_wd, aes(x, predicted)) +
-  geom_line(linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  labs(x = "CWM WD", y = "Predicted log(Biomass/age)",
-       title = "(b) Effect of CWM WD") +
-  theme_classic()
-
-library(patchwork)
-p1 + p2
-
-
-
-# ---- 3D PLOT ----
-
-
-# install.packages("plotly")
-
-# 1) Fit
-t <- lm(log_produt ~ cwm_ldmc + cwm_wd, data = dadosreg)
-
-# prediction grid
-xseq <- seq(min(dadosreg$cwm_ldmc, na.rm=TRUE),
-            max(dadosreg$cwm_ldmc, na.rm=TRUE), length.out=40)
-yseq <- seq(min(dadosreg$cwm_wd,   na.rm=TRUE),
-            max(dadosreg$cwm_wd,   na.rm=TRUE), length.out=40)
-
-grid  <- expand.grid(cwm_ldmc = xseq, cwm_wd = yseq)
-zpred <- matrix(predict(t, newdata = grid),
-                nrow = length(xseq), ncol = length(yseq))
-
-# plot
-p <- plot_ly() |>
-  add_markers(data = dadosreg,
-              x = ~cwm_ldmc, y = ~cwm_wd, z = ~log_produt,
-              color = ~sitemis, marker = list(size = 4, opacity = 0.9),
-              name = "Observed") |>
-  add_trace(x = xseq, y = yseq, z = zpred,
-            type = "surface", opacity = 0.6, showscale = FALSE,
-            name = "LM surface") |>
-  plotly::layout(scene = list(
-    xaxis = list(title = "CWM LDMC"),
-    yaxis = list(title = "CWM WD"),
-    zaxis = list(title = "log(Biomass/age)")
-  ))
-
-p
-
-# install.packages("webshot2")
-
-# Save
-
-htmlwidgets::saveWidget(p, "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html")   # salva o gráfico interativo
-webshot("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html", "3D_model.jpeg", vwidth = 1600, vheight = 1200)
-
-
-### FACET WRAP ###
-
-# SR
-dadosreg %>%
-  ggplot(aes(SR,log_produt))+
-  geom_point(size=3,alpha=0.5)+ #alpha é transparência
-  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
-  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
-  labs(x="SR",
-       y="Productivity",
-       title = "Species Richness and Productivity in ecological restoration plantings")+
-  theme_bw()
-
-ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/SR_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
-
-# FDIS_SLA
-dadosreg %>%
-  ggplot(aes(fric_wd,log_produt))+
-  geom_point(size=3,alpha=0.5)+ #alpha é transparência
-  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
-  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
-  labs(x="SR",
-       y="Productivity",
-       title = "Functional Richness - SLA")+
-  theme_bw()
-
-ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_SLA_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
-
-
-# Divide by site
-modelo_ml <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "ML"))
-modelo_regua <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "REGUA"))
-
-summary(modelo_ml) # not significant
-summary(modelo_regua) # not significant
-
-# FRic_LDMC
-dadosreg %>%
-  ggplot(aes(fric_ldmc,log_produt))+
-  geom_point(size=3,alpha=0.5)+ #alpha é transparência
-  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
-  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
-  labs(x="Fric",
-       y="Productivity",
-       title = "Functional Richness and Productivity in ecological restoration plantings")+
-  theme_bw()
-
-# ggsave("FRIC_LDMC_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
-
-# Divide by site
-modelo_ml <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "ML"))
-modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "REGUA"))
-
-summary(modelo_ml) # not significant
-summary(modelo_regua) # not significant
- 
-
 # ---- INDIVIDUAL PLOTS ----
 
 
@@ -706,6 +545,218 @@ g <- dadosreg %>%
   theme_minimal(base_size = 12)
 
 g
+
+
+
+## RaoQ LDMC ##
+
+# Fit the model
+fit <- lm(log_produt ~ RaoQ_LDMC, data = dadosreg)
+summary(fit)
+
+# Extract R² e p-value
+r2 <- summary(fit)$r.squared
+p  <- coef(summary(fit))["RaoQ_LDMC", "Pr(>|t|)"]
+
+# Text
+subtxt <- sprintf("R² = %.2f\np = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+# plot
+g <- dadosreg %>%
+  ggplot(aes(RaoQ_LDMC, log_produt)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = TRUE, colour = "purple") +
+  labs(
+    x = "RaoQ LDMC",
+    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
+    title = "The Relationship between RaoQ-LDMC and Biomass"
+  ) +
+  annotate("text", 
+           x = max(dadosreg$RaoQ_LDMC, na.rm = TRUE) * 0.28, 
+           y = max(dadosreg$log_produt, na.rm = TRUE) * 1.002, 
+           label = subtxt, 
+           hjust = 1, vjust = 1,
+           size = 3.5) +
+  theme_minimal(base_size = 11)
+
+g
+
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/RaoQ_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+
+
+
+## Isolating sites ##
+
+ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme_classic() +
+  labs(x = "CWM LDMC", y = "Log(Biomass/age)", color = "Site")
+
+ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme_classic() +
+  labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
+
+ggplot(dadosreg, aes(x = RaoQ_LDMC, y = log_produt, color = sitemis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  theme_classic() +
+  labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
+
+
+## Model CWM-LDMC + CWM-WD ##
+
+# Panel A – Mass-ratio (CWM LDMC)
+p1 <- ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "CWM LDMC", y = "Log(Biomass/age)", color = "Site",
+       title = "(a) Mass-ratio effect (CWM)") +
+  theme_classic() +
+  theme(legend.position = "top")
+
+# Panel B – Complementarity (FDis LDMC)
+p2 <- ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "FDis LDMC", y = NULL, color = "Site",
+       title = "(b) Complementarity effect (FD)") +
+  theme_classic() +
+  theme(legend.position = "none")   # shared legend from p1
+
+# Combine
+p1 + p2
+
+####### Effect plots for each variable #######
+
+# Get partial predictions (controlling for the other variable)
+eff_ldmc <- ggpredict(t, terms = "cwm_ldmc")
+eff_wd   <- ggpredict(t, terms = "cwm_wd")
+
+# Plot both effects side by side
+p1 <- ggplot(eff_ldmc, aes(x, predicted)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "CWM LDMC", y = "Predicted log(Biomass/age)",
+       title = "(a) Effect of CWM LDMC") +
+  theme_classic()
+
+p2 <- ggplot(eff_wd, aes(x, predicted)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
+  labs(x = "CWM WD", y = "Predicted log(Biomass/age)",
+       title = "(b) Effect of CWM WD") +
+  theme_classic()
+
+library(patchwork)
+p1 + p2
+
+
+
+# ---- 3D PLOT ----
+
+
+# install.packages("plotly")
+
+# 1) Fit
+t <- lm(log_produt ~ cwm_ldmc + cwm_wd, data = dadosreg)
+
+# prediction grid
+xseq <- seq(min(dadosreg$cwm_ldmc, na.rm=TRUE),
+            max(dadosreg$cwm_ldmc, na.rm=TRUE), length.out=40)
+yseq <- seq(min(dadosreg$cwm_wd,   na.rm=TRUE),
+            max(dadosreg$cwm_wd,   na.rm=TRUE), length.out=40)
+
+grid  <- expand.grid(cwm_ldmc = xseq, cwm_wd = yseq)
+zpred <- matrix(predict(t, newdata = grid),
+                nrow = length(xseq), ncol = length(yseq))
+
+# plot
+p <- plot_ly() |>
+  add_markers(data = dadosreg,
+              x = ~cwm_ldmc, y = ~cwm_wd, z = ~log_produt,
+              color = ~sitemis, marker = list(size = 4, opacity = 0.9),
+              name = "Observed") |>
+  add_trace(x = xseq, y = yseq, z = zpred,
+            type = "surface", opacity = 0.6, showscale = FALSE,
+            name = "LM surface") |>
+  plotly::layout(scene = list(
+    xaxis = list(title = "CWM LDMC"),
+    yaxis = list(title = "CWM WD"),
+    zaxis = list(title = "log(Biomass/age)")
+  ))
+
+p
+
+# install.packages("webshot2")
+
+# Save
+
+htmlwidgets::saveWidget(p, "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html")   # salva o gráfico interativo
+webshot("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/3D_model.html", "3D_model.jpeg", vwidth = 1600, vheight = 1200)
+
+
+### FACET WRAP ###
+
+# SR
+dadosreg %>%
+  ggplot(aes(SR,log_produt))+
+  geom_point(size=3,alpha=0.5)+ #alpha é transparência
+  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
+  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
+  labs(x="SR",
+       y="Productivity",
+       title = "Species Richness and Productivity in ecological restoration plantings")+
+  theme_bw()
+
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/SR_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+
+# FDIS_SLA
+dadosreg %>%
+  ggplot(aes(fric_wd,log_produt))+
+  geom_point(size=3,alpha=0.5)+ #alpha é transparência
+  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
+  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
+  labs(x="SR",
+       y="Productivity",
+       title = "Functional Richness - SLA")+
+  theme_bw()
+
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_SLA_prod_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+
+
+# Divide by site
+modelo_ml <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "ML"))
+modelo_regua <- lm(log_produt ~ fric_wd, data = dadosreg %>% filter(sitemis == "REGUA"))
+
+summary(modelo_ml) # not significant
+summary(modelo_regua) # not significant
+
+# FRic_LDMC
+dadosreg %>%
+  ggplot(aes(fric_ldmc,log_produt))+
+  geom_point(size=3,alpha=0.5)+ #alpha é transparência
+  geom_smooth(method = lm,se=F)+ #linear model, se = F não tem intervalo de confi
+  facet_wrap(~sitemis)+ # divide em dois gráficos diferentes
+  labs(x="Fric",
+       y="Productivity",
+       title = "Functional Richness and Productivity in ecological restoration plantings")+
+  theme_bw()
+
+# ggsave("FRIC_LDMC_facetwrap.jpg", width = 15, height = 10, units = "cm", dpi = 300)
+
+# Divide by site
+modelo_ml <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "ML"))
+modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis == "REGUA"))
+
+summary(modelo_ml) # not significant
+summary(modelo_regua) # not significant
+ 
 
 
 # ---- COEFPLOT ----
