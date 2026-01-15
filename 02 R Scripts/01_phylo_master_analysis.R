@@ -1,9 +1,8 @@
 
-########################################
-### SCRIPT FOR PHYLOGENETIC ANALYSIS ###
-########################################
 
-# Last update: 2025/11/28 (YYYY/MM/DD)
+### SCRIPT FOR PHYLOGENETIC ANALYSIS ###
+
+# Last update: 2025/01/15 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias
 # Post Graduate Program in Ecology - UFRJ - Brazil
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
@@ -37,9 +36,9 @@ library(factoextra)
 library(hillR) # Hill numbers
 library(phytools)
 
-#########################
-### PHYLOGENETIC TREE ###
-#########################
+
+### ---- PHYLO TREE ----
+
 
 # Install V.PhyloMaker2
 # install.packages("devtools")
@@ -171,9 +170,9 @@ sesmntd_only <- ses_mntd |>
   transmute(site, sesmntd = mntd.obs.z)
 view(sesmntd_only)
 
-#######
-# PSV #
-####### picante
+
+# ---- PSV ----
+# picante
 
 #'psv(samp,tree,compute.var=TRUE,scale.vcv=TRUE)
 #'psr(samp,tree,compute.var=TRUE,scale.vcv=TRUE)
@@ -209,9 +208,9 @@ write_xlsx(PSE, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/P
 PSC <- psc(comunidade,tree_ok)
 write_xlsx(PSC, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PSC.xlsx")
 
-###########################
-### TAXONOMIC DIVERSITY ###
-###########################
+
+### ---- TAXONOMIC DIVERSITY ----
+
 
 comunidade_diversity <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/comunidade_diversity.csv",
                                  row.names = 1,
@@ -252,9 +251,8 @@ write_csv(
 write_xlsx(data_diversity,
            "01 Datasets/02_processed_data/data_diversity.xlsx")
 
-########################
-### DATA EXPLORATION ###
-########################
+
+#### DATA EXPLORATION ####
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                                  header = TRUE)
@@ -305,10 +303,8 @@ boxplot(dadosmisto$log_produt,
         col = "#32CD32")
 dev.off()
 
-###################################
-####### CORRELATION MATRIX ########
-#### INDEPENDENT VARIABLES (X) ####
-###################################
+#### CORRELATION MATRIX #####
+### INDEPENDENT VARIABLES (X) ###
 
 # Read dataset
 data <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv", header = TRUE)
@@ -364,11 +360,10 @@ corrplot(cor_matrix_x,
 
 dev.off()
 
-##########################
-### LINEAR MIXED MODEL ###
-##########################
 
-# LMM
+
+
+### ---- LMMs ----
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE,row.names = 1)
@@ -541,9 +536,15 @@ r.squaredGLMM(msel) # 0.6393313
 AICc(msel) # 60.59433
 ### NEW BEST MODEL
 
-##########################
-#### MULTICOLINEARITY ####
-##########################
+m_fd_clima <- lmer(
+  log_produt ~ scale(ldmc_FDis) * scale(season_ppt) + (1 | site_p),
+  data = dadosmisto1,
+  REML = FALSE
+)
+
+summary(m_fd_clima)
+
+### ---- MULTICOLINEARITY ----
 
 # install.packages("car")
 
@@ -573,13 +574,14 @@ anova(modelo_nulo, c1)   # P-value = 0.0005941 ***
 r.squaredGLMM(c1)        # R²c = 0.5572206
 AICc(c1)                 # 69.51542
 
-#############
-### PLOTS ###
-#############
 
-## =============== ##
+
+
+### ---- PLOTS ----
+
+#### COEFPLOT ----
+
 ##  Coefplot m17   ##  
-## =============== ##
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE,
@@ -649,15 +651,13 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_m17.jpeg",
 
 
 
-################
-### PLOT GLM ###
-################
 
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE)
+#### PLOTs GLM ### ----
+
+
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
-
 
 ## SR 
 
@@ -819,8 +819,20 @@ g
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_season_ppt.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
+#### FACET WRAP ### ----
 
-### FACET WRAP ###
+library(dplyr)
+
+dadosmisto1 <- dadosmisto1 %>%
+  mutate(site_p = case_when(
+    grepl("^EEG", site)        ~ "Guaxindiba",
+    grepl("^ML", site)         ~ "ML",
+    grepl("^MP", site)         ~ "MP",
+    grepl("^REGUA", site)      ~ "REGUA",
+    grepl("^RESENDE", site)    ~ "MP",
+    TRUE                       ~ site
+  ))
+
 
 #SR
 
@@ -837,13 +849,42 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/facetwrap_SR.jpeg",
        plot = g,
        width = 13, height = 10, units = "cm", dpi = 600, bg = "white")
 
-############################
-### Plot Partial Effects ###
-############################
 
-# -------
+# ldmc FDis
+
+g <- dadosmisto1 %>%
+  ggplot(aes(ldmc_FDis, log_produt)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  facet_wrap(~site_p) +
+  labs(x = "FDis LDMC",
+       y = expression("Biomass accumulation (g m"^-2*" year"^-1*")")) +
+  theme_bw(base_size = 11)
+g
+
+### testing 
+
+ggplot(dadosmisto1, aes(x = site_p, y = season_ppt)) +
+  geom_boxplot(fill = "grey80", color = "black", outlier.shape = NA) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 2) +
+  labs(
+    x = "Site",
+    y = "Precipitation seasonality",
+    title = "Variation in precipitation seasonality across sites"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+
+
+#### Plot Partial Effects ----
+
+
 # Model
-# -------
+
 m12 <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
             data = dadosmisto1, REML = FALSE)
 
@@ -852,9 +893,9 @@ pv <- summary(m12)$coefficients[, "Pr(>|t|)"]
 p_txt_en <- sprintf("p(C:N)=%.3f | p(sr)=%.3f | p(PCPS1)=%.3f",
                     pv["c.n_soloid"], pv["sr"], pv["pcps1"])
 
-# ------------------------------
+
 # Data frame with english names
-# ------------------------------
+
 dados_plot <- dadosmisto1 %>%
   rename(
     soil_C_N_ratio      = c.n_soloid,
@@ -863,16 +904,15 @@ dados_plot <- dadosmisto1 %>%
     log_productivity    = log_produt
   )
 
-# --------------------------------------------------------------------
+
 # Marginal Effects (only fixed)
-# --------------------------------------------------------------------
+
 eff_c   <- ggpredict(m12, terms = "c.n_soloid", type = "fixed")
 eff_sr  <- ggpredict(m12, terms = "sr",         type = "fixed")
 eff_pc1 <- ggpredict(m12, terms = "pcps1",    type = "fixed")
 
-# --------------------------------------------------------------------
 # Plot with points + line + CI
-# --------------------------------------------------------------------
+
 base_sz <- 11
 thin_margin <- margin(4, 6, 4, 6)
 
@@ -920,9 +960,9 @@ fig_or <- wrap_plots(
 fig_or
 ggsave("~/01 Masters_LA/06 Figures/02 plots/fig_m12_partial_effects_original_EN.png", fig_or, width = 11, height = 6.4, dpi = 300)
 
-######################################
-######### PCPS - without CSA #########
-######################################
+
+# ---- PCPS - without CSA ----
+
 
 # input the sample species list without CSA
 example <- read.csv("01 Datasets/01_raw_data/filogenia_total_Sem_CSA.csv")
@@ -1036,9 +1076,8 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_biomass_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
 
-################################################
-## Family contribution (%) to PCPS1 and PCPS2 ##
-################################################
+
+#### Family contribution (%) to PCPS1 and PCPS2 ####
 
 example$species_us <- gsub(" ", "_", example$species)
 species_in_scores <- rownames(scores_species)
@@ -1098,9 +1137,9 @@ ggsave(
 )
 
 
-###########################
-### PHYLOGENETIC SIGNAL ###
-###########################
+
+### ---- PHYLOGENETIC SIGNAL ----
+
 
 # Without CSA
 
@@ -1118,9 +1157,9 @@ tree_teste <- multi2di(tree_ok)
 
 resultado <- multiPhylosignal(dados, tree_teste) # k = 0.2499149 FRACO SINAL
 
-#######################################
+
 ########## PCA GRANULOMETRY ###########
-#######################################
+
 
 granulometria <- read_excel("01 Datasets/01_raw_data/granulometria.xlsx")
 
@@ -1180,9 +1219,8 @@ cor(dados_granulometria, pca_resultado$x)
 write_xlsx(granulometria_pca, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/granulometria_pca.xlsx")
 
 
-########################################
-########### PCA - NUTRIENTS ############
-########################################
+
+########### PCA NUTRIENTS ############
 
 pca_nutrientes <- read_excel("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/pca_nutrientes.xlsx")
 
@@ -1240,9 +1278,8 @@ print(correlacoes)
 write_xlsx(nutrientes_pca, "01 Datasets/02_processed_data/nutrientes_pca.xlsx")
 write_xlsx(as.data.frame(correlacoes), "01 Datasets/02_processed_data/correlacoes_pca.xlsx")
 
-##################################################
-# SEM - PCA Climatic Variables (ppt, tmax, tmin) #
-##################################################
+
+########### PCA Climatic Variables (ppt, tmax, tmin) ####
 
 # 2. Carregar os dados (exemplo com dados fictícios)
 
@@ -1284,9 +1321,11 @@ cor(dados_padronizados, dados$PC1_clima)
 # 9. Salvar os dados com o PC1
 write.csv(dados, "01 Datasets/02_processed_data/dados_pc1aridez.csv", row.names = FALSE)
 
-########################################
-# Phylogenetic Analysis - HILL NUMBERS #
-########################################
+
+
+
+
+########### HILL NUMBERS ##############
 
 # install.packages(c("picante", "PhyloMeasures", "hillR", "ape", "phytools", "dplyr"))
 #install.packages("hillR")
@@ -1331,3 +1370,4 @@ summary(misto4)
 r.squaredGLMM(misto4)
 AICc(misto4) 
 
+### ---- END ----

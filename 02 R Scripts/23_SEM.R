@@ -535,6 +535,24 @@ fit_H2 <- lavaan::sem(H2, data=dados_scaled, estimator="ML")
 summary(fit_H2, standardized = TRUE, fit.measures = TRUE)
 
 
+# ---- Model J ----
+
+J <- '
+  c.n_soloid ~ season_ppt
+
+  ldmc_FDis ~ season_ppt + c.n_soloid + n_trees
+
+  wd_FDis   ~ season_ppt + c.n_soloid + n_trees
+
+  pcps1 ~ pse + faba
+
+  log_produt ~ n_trees + pcps1 + c.n_soloid + season_ppt + ldmc_FDis
+
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+fit_H2_FD <- lavaan::sem(H2_FD, data=dados_scaled, estimator="ML")
+summary(fit_H2_FD, standardized=TRUE, fit.measures=TRUE)
 
 
 
