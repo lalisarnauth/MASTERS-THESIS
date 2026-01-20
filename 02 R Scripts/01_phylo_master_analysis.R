@@ -8,7 +8,7 @@
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
 
 
-# Load all packages
+# Load all packages ----
 
 library(readr)
 library(tidyverse)
@@ -534,7 +534,24 @@ msel <- lmer(log_produt ~ pcps1 + n_trees + (1 | site), data = dadosmisto1, REML
 summary(msel) 
 r.squaredGLMM(msel) # 0.6393313
 AICc(msel) # 60.59433
-### NEW BEST MODEL
+
+m_sr <- lmer(sr ~ n_trees + (1|site), data=dadosmisto1, REML=FALSE)
+dadosmisto1$sr_resid <- resid(m_sr)
+m_resid <- lmer(log_produt ~ pcps1 + n_trees + sr_resid + (1|site), data=dadosmisto1, REML=FALSE)
+summary(m_resid)
+# SR is not important, even when we control for # of trees
+
+# selected model ----
+msel <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(msel) 
+r.squaredGLMM(msel) # 0.6421902
+AICc(msel) # 50.21553
+### NEW BEST MODEL???????????????
+
+m_int_pcps <- lmer(log_produt ~ pcps1 * n_trees + (1 | site),
+  data = dadosmisto1, REML = FALSE)
+summary(m_int_pcps)
+# Biomass increases with the number of individuals, regardless of the dominant phylogenetic composition of the community
 
 m_fd_clima <- lmer(
   log_produt ~ scale(ldmc_FDis) * scale(season_ppt) + (1 | site_p),
@@ -574,12 +591,9 @@ anova(modelo_nulo, c1)   # P-value = 0.0005941 ***
 r.squaredGLMM(c1)        # R²c = 0.5572206
 AICc(c1)                 # 69.51542
 
-
-
-
 ### ---- PLOTS ----
 
-#### COEFPLOT ----
+#### COEFPLOT #### 
 
 ##  Coefplot m17   ##  
 
@@ -882,8 +896,59 @@ ggplot(dadosmisto1, aes(x = site_p, y = season_ppt)) +
 
 #### Plot Partial Effects ----
 
+# New best model
 
 # Model
+msel <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site),
+             data = dadosmisto1, REML = FALSE)
+
+# 1) Fix n_trees at the observed mean
+nt_mean <- mean(dadosmisto1$n_trees, na.rm = TRUE)
+
+# 2) Define c.n_solo levels: low / medium / high
+# If c.n_solo is already standardized, use -1, 0, 1
+# If unsure, take average and sd:
+cn_mean <- mean(dadosmisto1$c.n_solo, na.rm = TRUE)
+cn_sd   <- sd(dadosmisto1$c.n_solo, na.rm = TRUE)
+
+cn_vals <- c(cn_mean - cn_sd, cn_mean, cn_mean + cn_sd)
+cn_labs <- c("Low Soil C:N", "Medium Soil C:N", "High Soil C:N")
+
+# 3) Predictions throughout PCPS1, keeping n_trees fixed and varying c.n_solo
+pred <- ggpredict(
+  msel,
+  terms = c(
+    "pcps1 [all]",
+    paste0("c.n_solo [", paste(round(cn_vals, 3), collapse = ","), "]"),
+    paste0("n_trees [", round(nt_mean, 3), "]")
+  )
+)
+
+# 4) Rename groups (rows) to down/medium/top
+pred$group <- factor(pred$group,
+                     levels = unique(pred$group),
+                     labels = cn_labs)
+
+# 5) Plot
+fig_or <- ggplot(pred, aes(x = x, y = predicted, color = group, fill = group)) +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.15, color = NA) +
+  geom_line(linewidth = 1.1) +
+  labs(
+    x = "PCPS1",
+    y = "Predicted log(Biomass, kg)",
+    color = "Soil C:N",
+    fill  = "Soil C:N"
+  ) +
+  theme_classic(base_size = 12)
+
+fig_or
+
+ggsave("~/01 Masters_LA/06 Figures/02 plots/msel_partial_effects.png", fig_or, width = 11, height = 6.4, dpi = 300)
+
+
+
+
+## Old Best Model
 
 m12 <- lmer(log_produt ~ c.n_soloid + SR + pcps1ab + (1 | site),
             data = dadosmisto1, REML = FALSE)
