@@ -551,12 +551,92 @@ J <- '
   pse ~~ faba
   season_ppt ~~ pse
 '
-fit_H2_FD <- lavaan::sem(H2_FD, data=dados_scaled, estimator="ML")
-summary(fit_H2_FD, standardized=TRUE, fit.measures=TRUE)
+fit_J <- lavaan::sem(J, data=dados_scaled, estimator="ML")
+summary(fit_J, standardized=TRUE, fit.measures=TRUE)
 
 
+# ---- Model K ---- Not good, don't use it
+
+dados_scaled$biomassa_z_kg <- scale(dadosmisto1$biomassa_z_kg)
+
+k <- '
+  # Climate effects
+  c.n_soloid ~ season_ppt
+  ldmc_FDis  ~ season_ppt + c.n_soloid + n_trees
+
+  # Phylogenetic structure
+  pcps1 ~ pse + faba
+
+  # Biomass production (aligned with msel)
+  biomassa_z_kg ~ n_trees + pcps1 + c.n_soloid
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+
+fit_k <- lavaan::sem(
+  k,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_k, standardized = TRUE, fit.measures = TRUE)
 
 
+# ---- Model K2 - BEST MODEL ---- 
 
+K2 <- '
+  # Climate → soil
+  c.n_soloid ~ season_ppt
 
+  # Functional diversity (wood density)
+  wd_FDis ~ season_ppt + c.n_soloid + n_trees
+
+  # Phylogenetic structure
+  pcps1 ~ pse + faba
+
+  # Biomass production (aligned with LMM)
+  biomassa_z_kg ~ n_trees + pcps1 + c.n_soloid
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+
+fit_K2 <- lavaan::sem(
+  K2,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_K2, standardized = TRUE, fit.measures = TRUE)
+
+# ---- Model L ----
+
+L <- '
+  # Climate → soil
+  c.n_soloid ~ season_ppt
+
+  # Dominant trait (wood density CWM)
+  wd_CWM ~ season_ppt + c.n_soloid + n_trees
+
+  # Phylogenetic structure
+  pcps1 ~ pse + faba
+
+  # Biomass production
+  biomassa_z_kg ~ n_trees + pcps1 + c.n_soloid + wd_CWM
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+
+fit_L <- lavaan::sem(
+  L,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_L, standardized = TRUE, fit.measures = TRUE)
 
