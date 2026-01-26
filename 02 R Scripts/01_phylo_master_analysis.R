@@ -561,6 +561,19 @@ m_fd_clima <- lmer(
 
 summary(m_fd_clima)
 
+# FD and CWM Nfix
+
+m <- lmer(log(biomassa_z_kg) ~ raoQ_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m)
+
+m <- lmer(log(biomassa_z_kg) ~ fdis_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m)
+
+m <- lmer(log(biomassa_z_kg) ~ cwm_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m)
+
+
+
 ### ---- MULTICOLINEARITY ----
 
 # install.packages("car")

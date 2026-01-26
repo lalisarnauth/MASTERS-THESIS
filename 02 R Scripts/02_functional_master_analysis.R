@@ -1,7 +1,7 @@
 
-######################################
 ### SCRIPT FOR FUNCTIONAL ANALYSIS ###
-######################################
+###         2nd chapter           ####
+
 
 # last update: 2025/11/25 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias

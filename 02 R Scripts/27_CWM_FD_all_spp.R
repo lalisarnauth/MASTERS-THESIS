@@ -88,3 +88,66 @@ results_wide <- results_wide %>%
 dadosmisto <- left_join(dadosmisto,results_wide,by="parcela")
 
 write.csv(dadosmisto,file = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/dadosmisto.csv")
+
+# ---- Nfix ----
+
+traits_nfix <- traits[, 4, drop = FALSE]
+traits_nfix$nfix <- as.factor(traits_nfix$nfix)
+
+common_species <- intersect(colnames(com), rownames(traits_nfix))
+comm_nfix <- com[, common_species]
+traits_nfix <- traits_nfix[common_species, , drop = FALSE]
+
+# Calculate
+
+fd_nfix <- dbFD(
+  x = traits_nfix,
+  a = comm_nfix,
+  stand.x = FALSE,
+  calc.FRic = FALSE,
+  calc.CWM = TRUE,
+  messages = FALSE
+)
+
+# RaoQ N fix
+raoQ_nfix <- fd_nfix$RaoQ
+
+raoQ_nfix_noCSA <- raoQ_nfix[!grepl("^CSA", names(raoQ_nfix))]
+dadosmisto1$raoQ_nfix <- raoQ_nfix_noCSA[as.character(dadosmisto1$parcela)]
+
+summary(dadosmisto1$raoQ_nfix)
+sum(is.na(dadosmisto1$raoQ_nfix))
+
+# FDis
+
+fdis_nfix <- fd_nfix$FDis
+fdis_nfix_noCSA <- fdis_nfix[!grepl("^CSA", names(fdis_nfix))]
+dadosmisto1$fdis_nfix <- fdis_nfix_noCSA[as.character(dadosmisto1$parcela)]
+
+# ---- CWM ----
+
+calc_cwm_nfix <- function(comm_nfix, traits_nfix) {
+  comm_mat <- as.matrix(comm_nfix)
+  storage.mode(comm_mat) <- "numeric"
+  
+  nfix_vec <- as.numeric(as.character(traits_nfix$nfix))  # 0/1
+  # opcional (mas bom): nomear para manter alinhado
+  names(nfix_vec) <- rownames(traits_nfix)
+  
+  apply(comm_mat, 1, function(x) {
+    sum(x * nfix_vec, na.rm = TRUE) / sum(x, na.rm = TRUE)
+  })
+}
+
+cwm_nfix <- calc_cwm_nfix(comm_nfix, traits_nfix)
+summary(cwm_nfix)
+head(cwm_nfix)
+
+
+cwm_nfix_noCSA <- cwm_nfix[!grepl("^CSA", names(cwm_nfix))]
+dadosmisto1$cwm_nfix <- cwm_nfix_noCSA[
+  match(as.character(dadosmisto1$parcela), names(cwm_nfix_noCSA))
+]
+
+write.csv(dadosmisto1,file = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/dadosmisto.csv",)
+
