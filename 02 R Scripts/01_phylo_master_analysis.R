@@ -37,7 +37,7 @@ library(hillR) # Hill numbers
 library(phytools)
 
 
-### ---- PHYLO TREE ----
+# ---- PHYLO TREE ----
 
 
 # Install V.PhyloMaker2
@@ -209,7 +209,7 @@ PSC <- psc(comunidade,tree_ok)
 write_xlsx(PSC, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/PSC.xlsx")
 
 
-### ---- TAXONOMIC DIVERSITY ----
+# ---- TAXONOMIC DIVERSITY ----
 
 
 comunidade_diversity <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/comunidade_diversity.csv",
@@ -252,7 +252,7 @@ write_xlsx(data_diversity,
            "01 Datasets/02_processed_data/data_diversity.xlsx")
 
 
-#### DATA EXPLORATION ####
+# ---- DATA EXPLORATION ----
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                                  header = TRUE)
@@ -312,6 +312,8 @@ data <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv", header = TRUE)
 # Remove first 7 rows (without CSA)
 data_filtered <- data[-c(1:7), ]
 
+# Environment data #
+
 # Define independent variables
 labels_pretty <- c(
   ppt         = "Precipitation (ppt)",
@@ -331,9 +333,8 @@ labels_pretty <- c(
   PC2nutri    = "Nutrients PC2",
   season_temp = "Temp Seasonality",
   season_ppt  = "PPT Seasonality",
-  c.n_soloid  = "Soil C/N Ratio"
-  
-)
+  c.n_soloid  = "Soil C/N Ratio",
+  )
 
 variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid")
 
@@ -360,13 +361,53 @@ corrplot(cor_matrix_x,
 
 dev.off()
 
+# Diversity metrics #
+
+# Define independent variables
+labels_pretty <- c(
+  sr = "SR",
+  sespd = "sesPD",
+  pse = "PSE",
+  pcps1 = "PCPS1",
+  wd_CWM = "WD_CWM",
+  ldmc_CWM = "LDMC CWM",
+  wd_FDis = "WD FDis",
+  ldmc_FDis = "LDMC FDis",
+  n_trees = "Tree Density",
+  fdis_nfix = "Nfix FDis",
+  cwm_nfix = "Nfix CWM"
+)
+
+variables_x <- c("sr", "sespd", "pse", "pcps1", "wd_CWM", "ldmc_CWM", "wd_FDis","ldmc_FDis", "n_trees", "fdis_nfix", "cwm_nfix")
+
+# Create dataframe with X variables
+data_x <- data_filtered %>%
+  dplyr::select(all_of(variables_x))
+
+# Correlation matrix
+cor_matrix_x <- cor(data_x, use = "complete.obs")
+
+# Replace row and column names with pretty labels
+rownames(cor_matrix_x) <- labels_pretty[variables_x]
+colnames(cor_matrix_x) <- labels_pretty[variables_x]
+
+# Plot
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_diversity_without_CSA.png",
+    width = 1200, height = 800, res = 150)
+
+corrplot(cor_matrix_x,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.8)
+
+dev.off()
 
 
 
-### ---- LMMs ----
+# ---- LMMs ----
 
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE,row.names = 1)
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 dadosmisto1 <- dadosmisto[-c(1:7), ]
 
@@ -530,7 +571,7 @@ summary(teste) # p=0.02711 *
 teste <- lmer(sespd ~ wd_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(teste) # p=0.5128
 
-msel <- lmer(log_produt ~ pcps1 + n_trees + (1 | site), data = dadosmisto1, REML = FALSE)
+m22 <- lmer(log_produt ~ pcps1 + n_trees + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(msel) 
 r.squaredGLMM(msel) # 0.6393313
 AICc(msel) # 60.59433
@@ -542,11 +583,11 @@ summary(m_resid)
 # SR is not important, even when we control for # of trees
 
 # selected model ----
-msel <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+m23 <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(msel) 
-r.squaredGLMM(msel) # 0.6421902
-AICc(msel) # 50.21553
-### NEW BEST MODEL???????????????
+r.squaredGLMM(m23) # 0.6421902
+AICc(m23) # 50.21553
+### NEW BEST MODEL
 
 m_int_pcps <- lmer(log_produt ~ pcps1 * n_trees + (1 | site),
   data = dadosmisto1, REML = FALSE)
@@ -563,15 +604,26 @@ summary(m_fd_clima)
 
 # FD and CWM Nfix
 
-m <- lmer(log(biomassa_z_kg) ~ raoQ_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m)
+n1 <- lmer(log(biomassa_z_kg) ~ raoQ_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(n1)
 
-m <- lmer(log(biomassa_z_kg) ~ fdis_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m)
+n2 <- lmer(log(biomassa_z_kg) ~ fdis_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(n2)
 
-m <- lmer(log(biomassa_z_kg) ~ cwm_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m)
+n3 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(n3)
 
+n4 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(n4)
+AICc(n4) # 55.029
+
+n4 <- lmer(log(biomassa_z_kg) ~ fdis_nfix + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(n4)
+AICc(n4) # 59.64845
+
+m24 <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
+summary(m24) 
+AICc(m24)
 
 
 ### ---- MULTICOLINEARITY ----
@@ -605,35 +657,29 @@ r.squaredGLMM(c1)        # R²c = 0.5572206
 AICc(c1)                 # 69.51542
 
 ### ---- PLOTS ----
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
+
+dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 #### COEFPLOT #### 
 
-##  Coefplot m17   ##  
-
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                       header = TRUE,
-                       sep = ";")
-
-dadosmisto1 <- dadosmisto[-c(1:7), ]
+##  Coefplot m23   ##  
 
 ## 1) Standardizing variables (mean = 0, sd = 1)
 
 dados_std <- dadosmisto1
-dados_std$season_ppt <- scale(dadosmisto1$season_ppt)
-dados_std$SR         <- scale(dadosmisto1$sr)
-dados_std$silte      <- scale(dadosmisto1$silte)
-dados_std$pcps1    <- scale(dadosmisto1$pcps1)
-
+dados_std$c.n_solo <- as.numeric(scale(dadosmisto1$c.n_solo))
+dados_std$n_trees <- as.numeric(scale(dadosmisto1$n_trees))
+dados_std$pcps1 <- as.numeric(scale(dadosmisto1$pcps1))
 
 ## 2) Run standardized model
 
-m17_std <- lmer(log_produt ~ season_ppt + SR + pcps1 + (1 | site),
-                data = dados_std, REML = FALSE)
+m23_std <- lmer(log_produt ~ n_trees + c.n_solo + pcps1 + (1 | site),data = dados_std, REML = FALSE)
 
-summary(m17_std)
+summary(m23_std)
 
 ## 3) Extract coefficients + IC95% of the stand. model
-coef_df <- tidy(m17_std, effects = "fixed", conf.int = TRUE)
+coef_df <- tidy(m23_std, effects = "fixed", conf.int = TRUE)
 
 ## 4) Remove intercept and add significant p-value
 coef_df_sem_intercepto <- subset(coef_df, term != "(Intercept)")
@@ -641,11 +687,17 @@ coef_df_sem_intercepto$significativo <- ifelse(coef_df_sem_intercepto$p.value < 
                                                "Significant", "Non-significant")
 
 ## 5) Labels and desirable order
-coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
-                                      levels = c("SR","pcps1","season_ppt"),
-                                      labels = c("Species richness (SR)","Phylogenetic composition (PCPS1)", "PPT Seasonality"))
-coef_df_sem_intercepto$term <- factor(coef_df_sem_intercepto$term,
-                                      levels = rev(levels(coef_df_sem_intercepto$term))  # SR no topo
+coef_df_sem_intercepto$term <- factor(
+  coef_df_sem_intercepto$term,
+  levels = c("n_trees","pcps1","c.n_solo"),
+  labels = c(
+    "Tree density",
+    "Phylogenetic composition\n(PCPS1)",
+    "Soil C:N"))
+
+coef_df_sem_intercepto$term <- factor(
+  coef_df_sem_intercepto$term,
+  levels = rev(levels(coef_df_sem_intercepto$term))
 )
 
 ## 6) Coefplot 
@@ -662,17 +714,24 @@ p <- ggplot(coef_df_sem_intercepto,
   scale_fill_manual(values = c("Significant" = "black",
                                "Non-significant" = "white")) +
   theme_minimal(base_size = 10) +
-  theme(panel.grid = element_blank(),
-        axis.text = element_text(color = "black"),
-        axis.title = element_text(face = "bold"),
-        legend.position = "none",
-        plot.margin = unit(c(6, 10, 6, 10), "mm")) +
-  labs(x = expression("Standardized regression coefficients ("*beta*" ± 95% CI)"),
-       y = "Predictors")
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(face = "bold"),
+    legend.position = "none",
+    plot.margin = unit(c(6, 10, 6, 10), "mm")
+  ) +
+  labs(
+    x = expression("Standardized regression coefficients ("*beta*" ± 95% CI)"),
+    y = "Predictors"
+  )
+
+
 p
+
 ## 7) Save
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/graf_coefplot_m17.jpeg",
+ggsave("~/01 Masters_LA/06 Figures/02 plots/coefplot_m23.jpeg",
        plot = p, width = 14, height = 9, units = "cm",
        dpi = 600, bg = "white", limitsize = FALSE)
 

@@ -640,3 +640,30 @@ fit_L <- lavaan::sem(
 
 summary(fit_L, standardized = TRUE, fit.measures = TRUE)
 
+# ---- Model K3 ---- 
+
+K3 <- '
+  # Climate → soil
+  c.n_soloid ~ season_ppt
+
+  # Functional diversity (wood density)
+  wd_FDis ~ season_ppt + c.n_soloid + n_trees
+
+  # Phylogenetic structure
+  pcps1 ~ pse + cwm_nfix
+
+  # Biomass production (aligned with LMM)
+  biomassa_z_kg ~ n_trees + pcps1 + c.n_soloid
+
+  # Covariances
+  pse ~~ cwm_nfix
+  season_ppt ~~ pse
+'
+
+fit_K3 <- lavaan::sem(
+  K3,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_K3, standardized = TRUE, fit.measures = TRUE)
