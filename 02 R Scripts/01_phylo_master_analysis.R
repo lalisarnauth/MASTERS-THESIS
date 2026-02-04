@@ -607,7 +607,7 @@ coef_df_sem_intercepto$term <- factor(
   coef_df_sem_intercepto$term,
   levels = c("n_trees","pcps1","c.n_solo"),
   labels = c(
-    "Tree density",
+    "Number of trees",
     "Phylogenetic composition\n(PCPS1)",
     "Soil C:N"))
 
