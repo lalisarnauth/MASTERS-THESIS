@@ -307,10 +307,7 @@ dev.off()
 ### INDEPENDENT VARIABLES (X) ###
 
 # Read dataset
-data <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv", header = TRUE)
-
-# Remove first 7 rows (without CSA)
-data_filtered <- data[-c(1:7), ]
+data <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 # Environment data #
 
@@ -334,9 +331,10 @@ labels_pretty <- c(
   season_temp = "Temp Seasonality",
   season_ppt  = "PPT Seasonality",
   c.n_soloid  = "Soil C/N Ratio",
+  n_trees     = "Number of trees"
   )
 
-variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid")
+variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid","n_trees")
 
 # Create dataframe with X variables
 data_x <- data_filtered %>%
@@ -373,7 +371,7 @@ labels_pretty <- c(
   ldmc_CWM = "LDMC CWM",
   wd_FDis = "WD FDis",
   ldmc_FDis = "LDMC FDis",
-  n_trees = "Tree Density",
+  n_trees = "Number of Trees",
   fdis_nfix = "Nfix FDis",
   cwm_nfix = "Nfix CWM"
 )
@@ -381,7 +379,7 @@ labels_pretty <- c(
 variables_x <- c("sr", "sespd", "pse", "pcps1", "wd_CWM", "ldmc_CWM", "wd_FDis","ldmc_FDis", "n_trees", "fdis_nfix", "cwm_nfix")
 
 # Create dataframe with X variables
-data_x <- data_filtered %>%
+data_x <- data %>%
   dplyr::select(all_of(variables_x))
 
 # Correlation matrix
@@ -409,158 +407,87 @@ dev.off()
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
-dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 # OFICIAL ### site as random variable
 
-modelo_nulo <- lmer(log_produt ~ (1|site), data = dadosmisto1, REML = FALSE)
+modelo_nulo <- lmer(log_produt ~ (1|site), data = dadosmisto, REML = FALSE)
 
 ### WITHOUT CSA ###
 
-m1 <- lmer(log_produt ~ sr + (1 | site), data = dadosmisto1, REML = FALSE)
+m1 <- lmer(log(biomassa_z_kg) ~ sr + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m1) 
-anova(modelo_nulo, m1) # p-value = 0.00766 **
-r.squaredGLMM(m1) # 0.5957724
-AICc(m1) # 74.78371
 
-mpd <- lmer(log_produt ~ pd + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(mpd) 
-anova(modelo_nulo, mpd) # p-value = 0.00846 **
-r.squaredGLMM(mpd) # 0.6219464
-AICc(mpd) # 75.17727
-
-m2 <- lmer(log_produt ~ sr + silte + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
+m2 <- lmer(log(biomassa_z_kg) ~ n_trees + silte + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m2) 
-anova(modelo_nulo, m2) # p-value = 0.00144 **
-r.squaredGLMM(m2) # 0.5609249
-AICc(m2) # 71.12221
+AICc(m2) # 58.19575
 
-m3 <- lmer(log_produt ~ sr + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
+m3 <- lmer(log(biomassa_z_kg) ~ n_trees + pcps1 + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m3) 
-anova(modelo_nulo, m3) # p-value = 0.00109 **
-r.squaredGLMM(m3) # 0.5643258
-AICc(m3) # 70.54185
+AICc(m3) # 60.59433
 
-m4 <- lmer(log_produt ~ sespd + (1 | site), data = dadosmisto1, REML = FALSE)
+m4 <- lmer(log(biomassa_z_kg) ~ sespd + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m4) 
-anova(modelo_nulo, m4) # p-value = 0.9531    
-r.squaredGLMM(m4) # 0.5117967
-AICc(m4) # 81.83127
+AICc(m4) # 68.22905
 
-m5 <- lmer(log_produt ~ sr * pcps1 + (1 | site), 
-           data = dadosmisto1, REML = FALSE)
-summary(m5)
-AICc(m5) # 72.37014
+m5 <- lmer(log_produt ~ riq_inicial + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m5) # p-value = 0.904   
+AICc(m5) # 81.81974
 
-m6 <- lmer(log_produt ~ riq_inicial + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m6) # p-value = 0.904   
-r.squaredGLMM(m6) # 0.5127016
-AICc(m6) # 81.81974
+m6 <- lmer(log_produt ~ ph + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m6) # p-value = 0.977
+AICc(m6) # 81.83388
 
-m7 <- lmer(log_produt ~ ph + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m7) # p-value = 0.977
-r.squaredGLMM(m7) # 0.51279
-AICc(m7) # 81.83388
+m7 <- lmer(log_produt ~ n_solo + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m7)    
+AICc(m7) # 64.9369
 
-m8 <- lmer(log_produt ~ n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m8) # p-value = 0.133     
-r.squaredGLMM(m8) # 0.5010822
-AICc(m8) # 79.57211
+m8 <- lmer(log(biomassa_z_kg) ~ c.n_solo + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m8)
+r.squaredGLMM(m8) # 0.6549526
+AICc(m8) # 57.85922
 
-m9 <- lmer(log_produt ~ c.n_soloid + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m9) # p-value =  0.0294 * 
-r.squaredGLMM(m9) # 0.5271506
-AICc(m9) # 76.89054
+m9 <- lmer(log(biomassa_z_kg) ~ c.n_solo + n_trees + ph + silte + pcps1 + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m9) 
+AICc(m9) # 56.06485
 
-m10 <- lmer(log_produt ~ c.n_soloid + sr + ph + silte + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m10) 
-anova(modelo_nulo, m10) # p-value = 0.001474 **   
-r.squaredGLMM(m10) # 0.5572333
-AICc(m10) # 72.12193
+m10 <- lmer(log(biomassa_z_kg) ~ season_ppt + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m10) # p-value = 0.045050 *  
+AICc(m10) # 76.82315
 
-m11 <- lmer(log_produt ~ c.n_soloid + sr + silte + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m11) 
-anova(modelo_nulo, m11) # p-value = 0.0005941 ***   
-r.squaredGLMM(m11) # 0.5572206
-AICc(m11) # 69.51542
+m11 <- lmer(log_produt ~ season_temp + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m11) # p-value = 0.408     
+AICc(m11) # 80.57329
 
-m12 <- lmer(log_produt ~ c.n_soloid + sr + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
+m12 <- lmer(log_produt ~ n_trees + pcps1 + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m12) 
-anova(modelo_nulo, m12) # p-value = 0.0003766 *** 
-r.squaredGLMM(m12) # 0.5667528
-AICc(m12) # 68.28968
-### m12 best model
+AICc(m12) # 56.97158
 
-m13 <- lmer(log_produt ~ c_soloid + (1 | site), data = dadosmisto1, REML = FALSE)
+m13 <- lmer(log_produt ~ n_trees + altitude + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m13) 
-anova(modelo_nulo, m13) # p-value = 0.577
-r.squaredGLMM(m13) # 0.5142692
-AICc(m13) # 81.51027
+AICc(m13) # 61.15278
 
-m14 <- lmer(log_produt ~ season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m14) # p-value = 0.0387 * 
-r.squaredGLMM(m14) # 0.5231383
-AICc(m14) # 76.82315
+m14 <- lmer(log(biomassa_z_kg) ~ PC1nutri + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m14) # p-value = 0.316         
+AICc(m14) # 67.71193
 
-m15 <- lmer(log_produt ~ season_temp + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m15) # p-value = 0.408
-r.squaredGLMM(m15) # 0.5237957
-AICc(m15) # 80.57329
+m15 <- lmer(log(biomassa_z_kg) ~ wd_CWM + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m15) # p-value = 0.861    
+AICc(m15) # 68.74134    
 
-m16 <- lmer(log_produt ~ c.n_soloid + sr + pcps1 + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m16) 
-anova(modelo_nulo, m16) # p-value = error
-r.squaredGLMM(m16) # 0.5667528
-AICc(m16) # 66.55721
+m16 <- lmer(log(biomassa_z_kg) ~ ldmc_CWM + n_trees +(1 | site), data = dadosmisto, REML = FALSE)
+summary(m16) # p-value = 0.511 
+AICc(m16) # 68.34818
 
-m17 <- lmer(log_produt ~ sr + pcps1 + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m17) 
-anova(modelo_nulo, m17) # p-value = error
-r.squaredGLMM(m17) # 0.5741846
-AICc(m17) # 66.78168
+m17 <- lmer(log(biomassa_z_kg) ~ wd_FDis + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m17) # p-value = 0.945    
+AICc(m17) # 80.89302
 
-m18 <- lmer(log_produt ~ altitude + season_ppt + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m18) 
-AICc(m18) # 75.9823
+m18 <- lmer(log(biomassa_z_kg) ~ ldmc_FDis + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m18) # p-value = 0.544
+AICc(m18) # 68.40385
 
-m19 <- lmer(log_produt ~ silte + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m19) # p-value = 0.0755 .
-AICc(m19) # 78.88817
-
-m20 <- lmer(log_produt ~ PC1nutri + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m20) # p-value = 0.0755 .
-AICc(m19) # 78.8881
-
-m21 <- lmer(log_produt ~ scale(basal_area) + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m21) # p-value = <2e-16 ***
-AICc(m21) # 10.69459
-
-m22 <- lmer(log_produt ~ gini + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m22) # p-value = <2e-16 ***
-AICc(m22) # 10.6945
-
-m18 <- lmer(log_produt ~ wd_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m18) # p-value = 0.736
-r.squaredGLMM(m18) # 0.5157152
-AICc(m18) # 81.7205
-
-m19 <- lmer(log_produt ~ ldmc_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m19) # p-value = 0.758
-r.squaredGLMM(m19) # 0.5056135
-AICc(m19) # 81.74262
-
-m20 <- lmer(log_produt ~ wd_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m20) # p-value = 0.758
-r.squaredGLMM(m20) # 0.5056135
-AICc(m20) # 81.74262
-
-m21 <- lmer(log_produt ~ ldmc_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(m21) # p-value = 0.587
-r.squaredGLMM(m21) # 0.5225871
-AICc(m21) # 81.54102
-
-teste <- lmer(pcps1 ~ ldmc_CWM + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(teste)
+teste <- lmer(pcps1 ~ ldmc_CWM + (1 | site), data = dadosmisto, REML = FALSE)
+summary(teste) # p=0.00970 **
 
 teste <- lmer(pse ~ ldmc_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(teste) # p=0.00501 **
@@ -571,49 +498,38 @@ summary(teste) # p=0.02711 *
 teste <- lmer(sespd ~ wd_FDis + (1 | site), data = dadosmisto1, REML = FALSE)
 summary(teste) # p=0.5128
 
-m22 <- lmer(log_produt ~ pcps1 + n_trees + (1 | site), data = dadosmisto1, REML = FALSE)
-summary(msel) 
-r.squaredGLMM(msel) # 0.6393313
-AICc(msel) # 60.59433
-
-m_sr <- lmer(sr ~ n_trees + (1|site), data=dadosmisto1, REML=FALSE)
-dadosmisto1$sr_resid <- resid(m_sr)
-m_resid <- lmer(log_produt ~ pcps1 + n_trees + sr_resid + (1|site), data=dadosmisto1, REML=FALSE)
-summary(m_resid)
-# SR is not important, even when we control for # of trees
+m19 <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m19) # p=0.000698 ***
+AICc(m19) # 58.67897
 
 # selected model ----
-m23 <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+msel <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto, REML = FALSE)
 summary(msel) 
-r.squaredGLMM(m23) # 0.6421902
-AICc(m23) # 50.21553
+r.squaredGLMM(msel) # 0.6421902
+AICc(msel) # 50.21553
 ### NEW BEST MODEL
 
 m_int_pcps <- lmer(log_produt ~ pcps1 * n_trees + (1 | site),
-  data = dadosmisto1, REML = FALSE)
+  data = dadosmisto, REML = FALSE)
 summary(m_int_pcps)
 # Biomass increases with the number of individuals, regardless of the dominant phylogenetic composition of the community
 
-m_fd_clima <- lmer(
-  log_produt ~ scale(ldmc_FDis) * scale(season_ppt) + (1 | site_p),
-  data = dadosmisto1,
-  REML = FALSE
-)
-
-summary(m_fd_clima)
+m20 <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
+summary(m20)
+AICc(m20) # 53.75862
 
 # FD and CWM Nfix
 
-n1 <- lmer(log(biomassa_z_kg) ~ raoQ_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+n1 <- lmer(log(biomassa_z_kg) ~ raoQ_nfix + (1 | site), data = dadosmisto, REML = FALSE)
 summary(n1)
 
-n2 <- lmer(log(biomassa_z_kg) ~ fdis_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+n2 <- lmer(log(biomassa_z_kg) ~ fdis_nfix + (1 | site), data = dadosmisto, REML = FALSE)
 summary(n2)
 
-n3 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + (1 | site), data = dadosmisto1, REML = FALSE)
+n3 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + (1 | site), data = dadosmisto, REML = FALSE)
 summary(n3)
 
-n4 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
+n4 <- lmer(log(biomassa_z_kg) ~ cwm_nfix + n_trees + c.n_solo + (1 | site), data = dadosmisto, REML = FALSE)
 summary(n4)
 AICc(n4) # 55.029
 
@@ -630,11 +546,11 @@ AICc(m24)
 
 # install.packages("car")
 
-m12 <- lmer(log_produt ~ c.n_soloid + sr + pcps1 + (1 | site), data = dadosmisto1, REML = FALSE)
+msel <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site), data = dadosmisto1, REML = FALSE)
 
 # Calculando o VIF
-vif(m12) # c.n_soloid   sr         pcps1 
-         # 1.027845   1.117701   1.089277 
+vif(msel) # n_trees    c.n_solo    pcps1 
+         # 1.045023   1.117701   1.10366
 
 ### CARBON ###
 
@@ -667,14 +583,14 @@ dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 ## 1) Standardizing variables (mean = 0, sd = 1)
 
-dados_std <- dadosmisto1
-dados_std$c.n_solo <- as.numeric(scale(dadosmisto1$c.n_solo))
-dados_std$n_trees <- as.numeric(scale(dadosmisto1$n_trees))
-dados_std$pcps1 <- as.numeric(scale(dadosmisto1$pcps1))
+dados_std <- dadosmisto
+dados_std$c.n_solo <- as.numeric(scale(dadosmisto$c.n_solo))
+dados_std$n_trees <- as.numeric(scale(dadosmisto$n_trees))
+dados_std$pcps1 <- as.numeric(scale(dadosmisto$pcps1))
 
 ## 2) Run standardized model
 
-m23_std <- lmer(log_produt ~ n_trees + c.n_solo + pcps1 + (1 | site),data = dados_std, REML = FALSE)
+m23_std <- lmer(log(biomassa_z_kg) ~ n_trees + c.n_solo + pcps1 + (1 | site),data = dados_std, REML = FALSE)
 
 summary(m23_std)
 
@@ -731,7 +647,7 @@ p
 
 ## 7) Save
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/coefplot_m23.jpeg",
+ggsave("~/01 Masters_LA/06 Figures/02 plots/coefplot_msel.jpeg",
        plot = p, width = 14, height = 9, units = "cm",
        dpi = 600, bg = "white", limitsize = FALSE)
 
@@ -1147,9 +1063,8 @@ apg_arrows$labels <- c("Anac", "Anno", "Apocy", "Aster", "Bigno", "Borag", "Cann
 
 # Merging the data into a single data.frame
 df_plot <- cbind(as.data.frame(scores_sites),
-                 produt = dadosmisto1$produt_z_g.ano,
-                 SESPD = dadosmisto1$sespd,
-                 SR = dadosmisto1$sr)
+                 Biomass = dadosmisto$biomassa_z_kg,
+                 SESPD = dadosmisto$sespd)
 
 ## only sespd
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
@@ -1186,10 +1101,10 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_SESPD_semCSA.jpeg", width = 15,
 ### only biomass
 
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
-  geom_point(aes(color = produt), size = 4) +
+  geom_point(aes(color = Biomass), size = 4) +
   scale_colour_gradientn(
     colors = c("black", "lightyellow", "red"),
-    name = "Biomass \nper year (g/y)"
+    name = "Aboveground \nBiomass (kg)"
   ) +
   labs(
     x = paste0("PCPS1 (", pcps1_var, "%)"),
