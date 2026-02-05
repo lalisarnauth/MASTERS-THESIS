@@ -8,11 +8,9 @@ library(lavaan)
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
                        header = TRUE)
 
-dadosmisto1 <- dadosmisto[-c(1:7), ]
-
 # Scale
 
-dados_scaled <- as.data.frame(scale(dadosmisto1[, sapply(dadosmisto1, is.numeric)]))
+dados_scaled <- as.data.frame(scale(dadosmisto[, sapply(dadosmisto, is.numeric)]))
 
 # ---- Model A ----
 

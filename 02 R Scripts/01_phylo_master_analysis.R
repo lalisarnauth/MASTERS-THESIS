@@ -454,15 +454,15 @@ m10 <- lmer(log(biomassa_z_kg) ~ season_ppt + n_trees + (1 | site), data = dados
 summary(m10) # p-value = 0.045050 *  
 AICc(m10) # 76.82315
 
-m11 <- lmer(log_produt ~ season_temp + (1 | site), data = dadosmisto, REML = FALSE)
+m11 <- lmer(log(biomassa_z_kg) ~ season_temp + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m11) # p-value = 0.408     
 AICc(m11) # 80.57329
 
-m12 <- lmer(log_produt ~ n_trees + pcps1 + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
+m12 <- lmer(log(biomassa_z_kg) ~ n_trees + pcps1 + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m12) 
 AICc(m12) # 56.97158
 
-m13 <- lmer(log_produt ~ n_trees + altitude + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
+m13 <- lmer(log(biomassa_z_kg) ~ n_trees + altitude + season_ppt + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m13) 
 AICc(m13) # 61.15278
 
@@ -1037,6 +1037,7 @@ grupos <- example$family
 # Importing the community matrix
 comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund_sem_csa.csv", row.names = 1,header = T, sep = ";")
 
+library(PCPS)
 # Running PCPS
 res <- pcps(comunidade, pdis.ord)
 summary(res)
@@ -1108,8 +1109,7 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
   ) +
   labs(
     x = paste0("PCPS1 (", pcps1_var, "%)"),
-    y = paste0("PCPS2 (", pcps2_var, "%)"),
-    title = "Phylogenetic composition of the study areas"
+    y = paste0("PCPS2 (", pcps2_var, "%)")
   ) +
   geom_label(
     data = apg_arrows,
@@ -1119,11 +1119,12 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
   ) +
   theme_minimal() +
   theme(
+    panel.grid = element_blank(),
     axis.line = element_line(color = "black", linewidth = 0.8),
     axis.text = element_text(size = 11),
     axis.title = element_text(size = 13),
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12)
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 15)
   )
 
 ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_biomass_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
