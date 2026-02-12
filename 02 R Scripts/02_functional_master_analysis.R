@@ -399,6 +399,7 @@ summary(ntrees) # p= 0.933
 # Functional (dispersion)
 m1 <- lm(log_biomass~fdis_ldmc + fdis_wd, data = dadosreg)
 summary(m1) # p= 0.0176
+# ---- Selected model ----
 
 # CWM (identity)
 m2 <- lm(log_biomass~cwm_ldmc + cwm_wd, data = dadosreg)
@@ -427,6 +428,7 @@ model_table <- as.data.frame(model_selection) %>%
 model_table
 
 model.avg(model_selection)
+sw(model_selection) # fdis_ldmc and fdis_wd have the largest Σwi (0.37 each)
 
 
 # ---- Plot ----
@@ -435,7 +437,7 @@ model.avg(model_selection)
 
 
 # Fit the model
-fit <- lm(log_produt ~ fric_ldmc, data = dadosreg)
+fit <- lm(log_biomass ~ fric_ldmc, data = dadosreg)
 summary(fit)
 
 # Extract R² e p-value
@@ -449,7 +451,7 @@ subtxt <- sprintf("R² = %.2f\np = %s",
 
 # plot
 g <- dadosreg %>%
-  ggplot(aes(fric_ldmc, log_produt)) +
+  ggplot(aes(fric_ldmc, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) + 
   geom_smooth(method = "lm", se = TRUE, colour = "yellow") +
   labs(
@@ -473,7 +475,7 @@ ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FRic_LDMC.jpeg"
 
 ### FDIS ###
 
-fit <- lm(log_produt ~ fdis_ldmc, data = dadosreg)
+fit <- lm(log_biomass ~ fdis_ldmc, data = dadosreg)
 summary(fit)
 
 # Extraindo R² e p-valor
@@ -487,12 +489,12 @@ subtxt <- sprintf("R² = %.2f\np = %s",
 
 # Gráfico
 g <- dadosreg %>%
-  ggplot(aes(fdis_ldmc, log_produt)) +
+  ggplot(aes(fdis_ldmc, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) + 
   geom_smooth(method = "lm", se = TRUE, colour = "brown") +
   labs(
     x = "FDis - Leaf Dry Matter Content (LDMC)",
-    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     title = "The Relationship between Functional Richness and Biomass"
   ) +
   annotate("text", 
@@ -530,7 +532,7 @@ g <- dadosreg %>%
   geom_smooth(method = "lm", se = TRUE, colour = "orange") +
   labs(
     x = "Species Richness",
-    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     title = "The Relationship between Species Richness and Biomass"
   ) +
   annotate("text", 
@@ -549,7 +551,7 @@ ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/SR.jpeg", g, wi
 ## CWM LDMC ##
 
 # 1) Fit the model
-fit <- lm(log_produt ~ cwm_ldmc, data = dadosreg)
+fit <- lm(log_biomass ~ cwm_ldmc, data = dadosreg)
 sm  <- summary(fit)
 
 # 2) Extract stats safely
@@ -563,16 +565,16 @@ subtxt <- sprintf("R² = %.2f | adj. R² = %.2f\np = %s",
 
 # 3) Nice positions for the annotation inside the panel
 x_annot <- min(dadosreg$cwm_ldmc,  na.rm = TRUE)
-y_annot <- max(dadosreg$log_produt, na.rm = TRUE)
+y_annot <- max(dadosreg$log_biomass, na.rm = TRUE)
 
 # 4) Plot
 g <- dadosreg %>%
-  ggplot(aes(x = cwm_ldmc, y = log_produt)) +
+  ggplot(aes(x = cwm_ldmc, y = log_biomass)) +
   geom_point(size = 3, alpha = 0.6) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 0.9, colour = "goldenrod") +
   labs(
     x = "CWM — Leaf Dry Matter Content (LDMC)",
-    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     title = "Relationship between CWM-LDMC and Productivity"
   ) +
   annotate("label",
@@ -585,15 +587,15 @@ g
 
 
 
-## RaoQ LDMC ##
+## sesMNTD
 
 # Fit the model
-fit <- lm(log_produt ~ RaoQ_LDMC, data = dadosreg)
+fit <- lm(log_biomass ~ SESMNTD, data = dadosreg)
 summary(fit)
 
 # Extract R² e p-value
 r2 <- summary(fit)$r.squared
-p  <- coef(summary(fit))["RaoQ_LDMC", "Pr(>|t|)"]
+p  <- coef(summary(fit))["SESMNTD", "Pr(>|t|)"]
 
 # Text
 subtxt <- sprintf("R² = %.2f\np = %s",
@@ -602,17 +604,15 @@ subtxt <- sprintf("R² = %.2f\np = %s",
 
 # plot
 g <- dadosreg %>%
-  ggplot(aes(RaoQ_LDMC, log_produt)) +
+  ggplot(aes(SESMNTD, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) + 
-  geom_smooth(method = "lm", se = TRUE, colour = "purple") +
+  geom_smooth(method = "lm", se = TRUE, colour = "yellow") +
   labs(
-    x = "RaoQ LDMC",
-    y = expression("log Net Biomass (g m"^-2*" year"^-1*")"),
-    title = "The Relationship between RaoQ-LDMC and Biomass"
-  ) +
+    x = "sesMNTD",
+    y = expression("log Biomass (kg)")) +
   annotate("text", 
-           x = max(dadosreg$RaoQ_LDMC, na.rm = TRUE) * 0.28, 
-           y = max(dadosreg$log_produt, na.rm = TRUE) * 1.002, 
+           x = max(dadosreg$fric_ldmc, na.rm = TRUE) * 0.45, 
+           y = max(dadosreg$log_biomass, na.rm = TRUE) * 1.002, 
            label = subtxt, 
            hjust = 1, vjust = 1,
            size = 3.5) +
@@ -621,7 +621,7 @@ g <- dadosreg %>%
 g
 
 # Save
-ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/RaoQ_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/sesMNTD.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 
 
@@ -645,55 +645,118 @@ ggplot(dadosreg, aes(x = RaoQ_LDMC, y = log_produt, color = sitemis)) +
   theme_classic() +
   labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
 
-
-## Model CWM-LDMC + CWM-WD ##
-
-# Panel A – Mass-ratio (CWM LDMC)
-p1 <- ggplot(dadosreg, aes(x = cwm_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "CWM LDMC", y = "Log(Biomass/age)", color = "Site",
-       title = "(a) Mass-ratio effect (CWM)") +
-  theme_classic() +
-  theme(legend.position = "top")
-
-# Panel B – Complementarity (FDis LDMC)
-p2 <- ggplot(dadosreg, aes(x = fdis_ldmc, y = log_produt, color = sitemis)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE) +
-  labs(x = "FDis LDMC", y = NULL, color = "Site",
-       title = "(b) Complementarity effect (FD)") +
-  theme_classic() +
-  theme(legend.position = "none")   # shared legend from p1
-
-# Combine
-p1 + p2
-
 ####### Effect plots for each variable #######
 
-# Get partial predictions (controlling for the other variable)
-eff_ldmc <- ggpredict(t, terms = "cwm_ldmc")
-eff_wd   <- ggpredict(t, terms = "cwm_wd")
+# Diversity model
 
-# Plot both effects side by side
-p1 <- ggplot(eff_ldmc, aes(x, predicted)) +
-  geom_line(linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  labs(x = "CWM LDMC", y = "Predicted log(Biomass/age)",
-       title = "(a) Effect of CWM LDMC") +
+# Partial predictions controlling for the other predictor
+eff_ldmc <- ggpredict(m1, terms = "fdis_ldmc")
+eff_wd   <- ggpredict(m1, terms = "fdis_wd")
+
+# Plot LDMC dispersion
+
+p1 <- ggplot() +
+  geom_point(data = dadosreg,
+             aes(x = fdis_ldmc, y = log_biomass),
+             alpha = 0.6) +
+  geom_line(data = eff_ldmc,
+            aes(x = x, y = predicted),
+            linewidth = 1) +
+  geom_ribbon(data = eff_ldmc,
+              aes(x = x, ymin = conf.low, ymax = conf.high),
+              alpha = 0.2) +
+  labs(
+    x = "FDis LDMC",
+    y = "log(Biomass)",
+    title = "(a) Effect of LDMC functional dispersion"
+  ) +
   theme_classic()
 
-p2 <- ggplot(eff_wd, aes(x, predicted)) +
-  geom_line(linewidth = 1) +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.2) +
-  labs(x = "CWM WD", y = "Predicted log(Biomass/age)",
-       title = "(b) Effect of CWM WD") +
+# Plot WD dispersion
+p2 <- ggplot() +
+  geom_point(data = dadosreg,
+             aes(x = fdis_wd, y = log_biomass),
+             alpha = 0.6) +
+  geom_line(data = eff_wd,
+            aes(x = x, y = predicted),
+            linewidth = 1) +
+  geom_ribbon(data = eff_wd,
+              aes(x = x, ymin = conf.low, ymax = conf.high),
+              alpha = 0.2) +
+  labs(
+    x = "FDis Wood Density",
+    y = "log(Biomass)",
+    title = "(b) Effect of WD functional dispersion"
+  ) +
   theme_classic()
 
-library(patchwork)
-p1 + p2
+# Combine
+final_plot <- p1 + p2
 
+ggsave(filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Effect_FDis_LDMC_WD.jpeg",
+  plot = final_plot,
+  width = 8,
+  height = 4,
+  units = "in",
+  dpi = 300)
 
+# Identity model
+
+# Modelo CWM (identity)
+m2 <- lm(log_biomass ~ cwm_ldmc + cwm_wd, data = dadosreg)
+
+# Partial predictions controlling for the other predictor
+eff_cwm_ldmc <- ggpredict(m2, terms = "cwm_ldmc")
+eff_cwm_wd   <- ggpredict(m2, terms = "cwm_wd")
+
+# Plot CWM LDMC
+p1_cwm <- ggplot() +
+  geom_point(data = dadosreg,
+             aes(x = cwm_ldmc, y = log_biomass),
+             alpha = 0.6) +
+  geom_line(data = eff_cwm_ldmc,
+            aes(x = x, y = predicted),
+            linewidth = 1) +
+  geom_ribbon(data = eff_cwm_ldmc,
+              aes(x = x, ymin = conf.low, ymax = conf.high),
+              alpha = 0.2) +
+  labs(
+    x = "CWM LDMC",
+    y = "log(Biomass)",
+    title = "(a) Effect of community-weighted mean LDMC"
+  ) +
+  theme_classic()
+
+# Plot CWM Wood Density
+p2_cwm <- ggplot() +
+  geom_point(data = dadosreg,
+             aes(x = cwm_wd, y = log_biomass),
+             alpha = 0.6) +
+  geom_line(data = eff_cwm_wd,
+            aes(x = x, y = predicted),
+            linewidth = 1) +
+  geom_ribbon(data = eff_cwm_wd,
+              aes(x = x, ymin = conf.low, ymax = conf.high),
+              alpha = 0.2) +
+  labs(
+    x = "CWM Wood Density",
+    y = "log(Biomass)",
+    title = "(b) Effect of community-weighted mean wood density"
+  ) +
+  theme_classic()
+
+# Combine
+final_plot_cwm <- p1_cwm + p2_cwm
+
+# Save
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Effect_CWM_LDMC_WD.jpeg",
+  plot = final_plot_cwm,
+  width = 8,
+  height = 4,
+  units = "in",
+  dpi = 300
+)
 
 # ---- 3D PLOT ----
 
@@ -798,89 +861,57 @@ summary(modelo_regua) # not significant
 
 # ---- COEFPLOT ----
 
+# Models scaled
+m1z <- lm(scale(log_biomass) ~ scale(fdis_ldmc) + scale(fdis_wd), data = dadosreg)
+m2z <- lm(scale(log_biomass) ~ scale(cwm_ldmc) + scale(cwm_wd), data = dadosreg)
+m3z <- lm(scale(log_biomass) ~ scale(SESMNTD), data = dadosreg)
+m4z <- lm(scale(log_biomass) ~ scale(SR), data = dadosreg)
 
-# 1) PREDICTORS
-preds <- c("SR",
-           "fdis","fric","fdiv",
-           "cwm_wd","cwm_sla","cwm_ldmc",
-           "fdis_wd","fric_wd",
-           "fdis_sla","fric_sla",
-           "fdis_ldmc","fric_ldmc")
-
-# labels for the plot
-pretty_lab <- c(
-  SR           = "Species richness (SR)",
-  fdis         = "FDis (all traits)",
-  fric         = "FRic (all traits)",
-  fdiv         = "FDiv (all traits)",
-  cwm_wd       = "CWM — Wood density",
-  cwm_sla      = "CWM — SLA",
-  cwm_ldmc     = "CWM — LDMC",
-  fdis_wd      = "FDis — WD",
-  fric_wd      = "FRic — WD",
-  fdis_sla     = "FDis — SLA",
-  fric_sla     = "FRic — SLA",
-  fdis_ldmc    = "FDis — LDMC",
-  fric_ldmc    = "FRic — LDMC"
-)
-
-# 2) Adjust and extract DF
-fit_and_tidy <- function(var, dat) {
-  form <- as.formula(paste0("log_produt ~ ", var))
-  fit  <- lm(form, data = dat)
-  sm   <- summary(fit)
-  ci   <- suppressWarnings(confint(fit, level = 0.95))
-  est  <- sm$coefficients[var, "Estimate"]
-  se   <- sm$coefficients[var, "Std. Error"]
-  pval <- sm$coefficients[var, "Pr(>|t|)"]
-  lo   <- ci[var, 1]
-  hi   <- ci[var, 2]
-  tibble(
-    predictor = var,
-    estimate  = est,
-    conf.low  = lo,
-    conf.high = hi,
-    p.value   = pval
-  )
+# Function to extract coefficients
+get_coef <- function(mod, model_name){
+  tidy(mod, conf.int = TRUE) %>%
+    filter(term != "(Intercept)") %>%
+    mutate(model = model_name,
+           sig = p.value < 0.05)
 }
 
-# 3) COEFICIENTS TABLE
-coef_tab <- map_dfr(preds, fit_and_tidy, dat = dadosreg) %>%
-  mutate(label      = pretty_lab[predictor],
-         is_ldmc    = str_detect(predictor, "ldmc"),
-         sig        = p.value < 0.05,
-         label_plot = ifelse(sig, paste0("**", label, "**"), label))
+coef_all <- bind_rows(
+  get_coef(m1z, "Functional (FDis)"),
+  get_coef(m2z, "Identity (CWM)"),
+  get_coef(m3z, "Phylogenetic"),
+  get_coef(m4z, "Richness")
+) %>%
+  mutate(term = gsub("scale\\(|\\)", "", term)) %>%
+  mutate(term = dplyr::recode(term,
+                              "fdis_ldmc" = "FDis LDMC",
+                              "fdis_wd"   = "FDis Wood Density",
+                              "cwm_ldmc"  = "CWM LDMC",
+                              "cwm_wd"    = "CWM Wood Density",
+                              "SESMNTD"   = "sesMNTD",
+                              "SR"        = "Species Richness"
+  )) %>%
+  mutate(term = factor(term, levels = rev(unique(term))))
 
-# Order by magnitude of the effect (absolute) or as you prefer.
-coef_tab <- coef_tab %>%
-  arrange(estimate) %>%
-  mutate(label_plot = factor(label_plot, levels = label_plot))
+# Plot
+coef_plot <- ggplot(coef_all, aes(x = estimate, y = term)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  geom_point(aes(shape = sig), size = 3) +
+  scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1)) +
+  labs(
+    x = "Standardized effect size (β)",
+    y = NULL
+  ) +
+  theme_classic()
 
-# 4) PLOT 
-g_coef <- ggplot(coef_tab,
-                 aes(x = estimate, y = label_plot)) +
-  geom_vline(xintercept = 0, linetype = 2, color = "gray70") +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
-                 height = 0.2,
-                 alpha  = ifelse(coef_tab$sig, 1, 0.5),
-                 color  = ifelse(coef_tab$is_ldmc, "#E5C100", "gray55")) +
-  geom_point(size = 2.8,
-             alpha = ifelse(coef_tab$sig, 1, 0.7),
-             color = ifelse(coef_tab$is_ldmc, "#E5C100", "gray25")) +
-  labs(x = "Slope (β) ± 95% CI",
-       y = NULL,
-       title = "Effect sizes of trait metrics on productivity",
-       subtitle = "Highlighted in yellow: LDMC metrics; Bold labels: p < 0.05") +
-  theme_minimal(base_size = 12) +
-  theme(
-    axis.title.x   = element_text(face = "bold"),
-    plot.subtitle  = element_text(color = "gray30"),
-    panel.grid.minor = element_blank()
-  )
-
-g_coef
-ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/coefplot_produt_raw.jpeg", g_coef, width = 16, height = 11, units = "cm", dpi = 600)
-
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Coefplot_Functional_Phylo_SR.jpeg",
+  plot = coef_plot,
+  width = 6,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
 
 
 # ---- PHYLO SIGNAL FOR TRAITS ----
