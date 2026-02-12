@@ -22,7 +22,7 @@ library(ggeffects)
 library(webshot2)
 library(purrr)
 library(stringr)
-
+library(dplyr)
 library(plotly) # Masks dplyr filter()
 
 
@@ -163,7 +163,7 @@ saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Fun
 
 
 
-##### CORRELATION MATRIX: FUNCTIONAL #####
+# ---- CORRELATION MATRIX: FUNCTIONAL #####
 ##### INDEPENDENT VARIABLES FROM FILE ####
 
 
@@ -173,17 +173,19 @@ library(tidyverse)
 library(corrplot)
 
 # Read Excel file
-functional_data <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/reg_funcional.csv", header = TRUE)
+functional_data <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
 
 # Inspect columns
 colnames(functional_data)
 
 # Define independent variables')
 
-variables_func <- c("fdis", "fric", "fdiv",
+variables_func <- c("log_biomass","fdis", "fric", "fdiv",
                     "cwm_wd", "cwm_sla", "cwm_ldmc",
                     "fdis_wd", "fric_wd", "fdis_sla", "fric_sla",
-                    "fdis_ldmc", "fric_ldmc", "SR", "SESPD","PSEab", "dcF", "dcP")
+                    "fdis_ldmc", "fric_ldmc",
+                    "SR", "SESPD", "SESMNTD", "PSC", "PSEab",
+                    "dcF", "dcP")
 
 # Create a dataframe with only these variables
 data_func <- functional_data %>%
@@ -191,27 +193,36 @@ data_func <- functional_data %>%
 
 # Optional: Define pretty labels for plot
 labels_pretty_func <- c(
+  log_biomass = "Log Biomass",
   fdis        = "Functional Dispersion",
   fric        = "Functional Richness",
   fdiv        = "Functional Divergence",
+  
   cwm_wd      = "CWM Wood Density",
   cwm_sla     = "CWM SLA",
   cwm_ldmc    = "CWM LDMC",
+  
   fdis_wd     = "FDis Wood Density",
   fric_wd     = "FRic Wood Density",
   fdis_sla    = "FDis SLA",
   fric_sla    = "FRic SLA",
   fdis_ldmc   = "FDis LDMC",
   fric_ldmc   = "FRic LDMC",
+  
   SR          = "Species Richness",
+  
   SESPD       = "sesPD",
+  SESMNTD     = "sesMNTD",
+  PSC         = "PSC",
   PSEab       = "PSE",
-  dcF         = "dcF",
-  dcP         = "dcP"
+  
+  dcF         = "Decoupled Functional",
+  dcP         = "Decoupled Phylogenetic"
 )
 
 # Compute correlation matrix
 cor_matrix_func <- cor(data_func, use = "complete.obs")
+cor_matrix_func <- cor(data_func, method = "spearman", use = "pairwise.complete.obs") # better for n = 23
 
 # Replace row and column names with pretty labels
 rownames(cor_matrix_func) <- labels_pretty_func[variables_func]
@@ -230,166 +241,192 @@ corrplot(cor_matrix_func,
 dev.off()
 
 
+
 # ---- GLMS ----
 
 
 dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
 
-#### CARBON ACCUMULATION (LOG_PRODUT) ####
-
 # Functional diversity
 
-produt.fdis <- lm(log_produt~fdis,data = dadosreg)
-summary(produt.fdis) # p-value: 0.323     
+produt.fdis <- lm(log_biomass~fdis,data = dadosreg)
+summary(produt.fdis) # p-value: 0.232     
 residuos_fdis <- residuals(produt.fdis)
 shapiro.test(residuos_fdis) #NORMAL
 
-produt.fric <- lm(log_produt~fric,data = dadosreg)
-summary(produt.fric) # p-value: 0.878 
+produt.fric <- lm(log_biomass~fric,data = dadosreg)
+summary(produt.fric) # p-value: 0.944  
 residuos_fric <- residuals(produt.fric)
 shapiro.test(residuos_fric) #NORMAL
 
-produt.fdiv <- lm(log_produt~fdiv,data = dadosreg)
-summary(produt.fdiv) # p-value: 0.509
+produt.fdiv <- lm(log_biomass~fdiv,data = dadosreg)
+summary(produt.fdiv) # p-value: 0.459
 residuos_fdiv <- residuals(produt.fdiv)
 shapiro.test(residuos_fdiv) #NORMAL
 
-produt.cwm_wd <- lm(log_produt~cwm_wd,data = dadosreg)
-summary(produt.cwm_wd) # p-value: 0.167 
+produt.cwm_wd <- lm(log_biomass~cwm_wd,data = dadosreg)
+summary(produt.cwm_wd) # p-value: 0.234 
 residuos_cwm_wd <- residuals(produt.cwm_wd)
 shapiro.test(residuos_cwm_wd) #NORMAL
 
-produt.cwm_sla <- lm(log_produt~cwm_sla,data = dadosreg)
-summary(produt.cwm_sla) # p-value: 0.579 
+produt.cwm_sla <- lm(log_biomass~cwm_sla,data = dadosreg)
+summary(produt.cwm_sla) # p-value: 0.537 
 residuos_cwm_sla <- residuals(produt.cwm_sla)
 shapiro.test(residuos_cwm_sla) #NORMAL
 
-produt.cwm_ldmc <- lm(log_produt~cwm_ldmc,data = dadosreg)
-summary(produt.cwm_ldmc) # p-value: 0.146
+produt.cwm_ldmc <- lm(log_biomass~cwm_ldmc,data = dadosreg)
+summary(produt.cwm_ldmc) # p-value: 0.0595 . 
 residuos_cwm_ldmc <- residuals(produt.cwm_ldmc)
 shapiro.test(residuos_cwm_ldmc) #NORMAL
 
-produt.fdis_wd <- lm(log_produt~fdis_wd,data = dadosreg)
-summary(produt.fdis_wd) # p-value: 0.699
+produt.fdis_wd <- lm(log_biomass~fdis_wd,data = dadosreg)
+summary(produt.fdis_wd) # p-value: 0.8 
 residuos_fdis_wd <- residuals(produt.fdis_wd)
 shapiro.test(residuos_fdis_wd) #NORMAL
 
-produt.fric_wd <- lm(log_produt~fric_wd,data = dadosreg)
-summary(produt.fric_wd) # p-value: 0.806
+produt.fric_wd <- lm(log_biomass~fric_wd,data = dadosreg)
+summary(produt.fric_wd) # p-value: 0.892
 residuos_fric_wd <- residuals(produt.fric_wd)
 shapiro.test(residuos_fric_wd) #NORMAL
 
-produt.fdis_sla <- lm(log_produt~fdis_sla,data = dadosreg)
-summary(produt.fdis_sla) # p-value: 0.214
+produt.fdis_sla <- lm(log_biomass~fdis_sla,data = dadosreg)
+summary(produt.fdis_sla) # p-value: 0.124
 residuos_fdis_sla <- residuals(produt.fdis_sla)
 shapiro.test(residuos_fdis_sla) #NORMAL
 
-produt.fric_sla <- lm(log_produt~fric_sla,data = dadosreg)
-summary(produt.fric_sla) # p-value: 0.333 
+produt.fric_sla <- lm(log_biomass~fric_sla,data = dadosreg)
+summary(produt.fric_sla) # p-value: 0.267 
 residuos_fric_sla <- residuals(produt.fric_sla)
 shapiro.test(residuos_fric_sla) #NORMAL
 
-produt.fdis_ldmc <- lm(log_produt~fdis_ldmc,data = dadosreg)
-summary(produt.fdis_ldmc) # p-value: 0.0483 *
+produt.fdis_ldmc <- lm(log_biomass~fdis_ldmc,data = dadosreg)
+summary(produt.fdis_ldmc) # p-value: 0.0469 *
 residuos_fdis_ldmc <- residuals(produt.fdis_ldmc)
 shapiro.test(residuos_fdis_ldmc) #NORMAL
 
-produt.fric_ldmc <- lm(log_produt~fric_ldmc,data = dadosreg)
-summary(produt.fric_ldmc) # p-value: 0.0301 * 
+produt.fric_ldmc <- lm(log_biomass~fric_ldmc,data = dadosreg)
+summary(produt.fric_ldmc) # p-value:  0.0399 * 
 residuos_fric_ldmc <- residuals(produt.fric_ldmc)
 shapiro.test(residuos_fric_ldmc) #NORMAL
 
-produt.fdis <- lm(log_produt~raoq,data = dadosreg)
-summary(produt.fdis) # p-value: 0.39     
-residuos_fdis <- residuals(produt.fdis)
-shapiro.test(residuos_fdis) #NORMAL
-
-produt.raoqsla <- lm(log_produt~RaoQ_SLA,data = dadosreg)
-summary(produt.raoqsla) # p-value: 0.536     
-residuos_fdis <- residuals(produt.raoqsla)
-shapiro.test(residuos_fdis) #NORMAL
-
-produt.raoqldmc <- lm(log_produt~RaoQ_LDMC,data = dadosreg)
-summary(produt.raoqldmc) # p-value: 0.0302 *      
-residuos_raoqldmc <- residuals(produt.raoqldmc)
-shapiro.test(residuos_raoqldmc) #NORMAL
-
 # Taxonomic diversity
-produt.SR <- lm(log_produt~SR,data = dadosreg)
-summary(produt.SR) # p-value: 0.7908
+produt.SR <- lm(log_biomass~SR,data = dadosreg)
+summary(produt.SR) # p-value: 0.393
 residuos_sr <- residuals(produt.SR)
 shapiro.test(residuos_sr) #NORMAL
 
 # Phylogenetic diversity
 
-produt.SESPD <- lm(log_produt~SESPD,data = dadosreg)
-summary(produt.SESPD) # p-value: 0.2167
+produt.SESPD <- lm(log_biomass~SESPD,data = dadosreg)
+summary(produt.SESPD) # p-value: 0.0497 * 
 residuos_SESPD <- residuals(produt.SESPD)
 shapiro.test(residuos_SESPD) #NORMAL
 
-produt.SESMPD <- lm(log_produt~SESMPD,data = dadosreg)
-summary(produt.SESMPD) # p-value: 0.5041
+produt.SESMPD <- lm(log_biomass~SESMPD,data = dadosreg)
+summary(produt.SESMPD) # p-value: 0.187
 residuos_SESMPD <- residuals(produt.SESMPD)
 shapiro.test(residuos_SESMPD) #NORMAL
 
-produt.SESMNTD <- lm(log_produt~SESMNTD,data = dadosreg)
-summary(produt.SESMNTD) # p-value: 0.148
+produt.SESMNTD <- lm(log_biomass~SESMNTD,data = dadosreg)
+summary(produt.SESMNTD) # p-value: 0.0331 *
 residuos_SESMNTD <- residuals(produt.SESMNTD)
 shapiro.test(residuos_SESMNTD) #NORMAL
 
-produt.PSV <- lm(log_produt~PSV,data = dadosreg)
-summary(produt.PSV) # p-value: 0.4713
+produt.PSV <- lm(log_biomass~PSV,data = dadosreg)
+summary(produt.PSV) # p-value: 0.211
 residuos_PSV <- residuals(produt.PSV)
 shapiro.test(residuos_PSV) #NORMAL
 
-produt.PSC <- lm(log_produt~PSC,data = dadosreg)
-summary(produt.PSV) # p-value: 0.139
+produt.PSC <- lm(log_biomass~PSC,data = dadosreg)
+summary(produt.PSC) # p-value: 0.0456 * 
 
-produt.PSEab <- lm(log_produt~PSEab,data = dadosreg)
-summary(produt.PSEab) # p-value: 0.2861
+produt.PSEab <- lm(log_biomass~PSEab,data = dadosreg)
+summary(produt.PSEab) # p-value: 0.105
 
 # Multiple variables
 
-t <- lm(log_produt~cwm_ldmc+cwm_wd,data = dadosreg)
-summary(t) # p-value: 0.044 *
+t <- lm(log_biomass~cwm_ldmc+cwm_wd,data = dadosreg)
+summary(t) # p-value: 0.02186 *
 AICc(t)
 
-t2 <- lm(log_produt ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
-summary(t2) # p-value = 0.1069
+t2 <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
+summary(t2) # p-value = 0.07547
 
 # FDis only
-m_fdis <- lm(log_produt ~ fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m_fdis) # p-value = 0.01161 *
+m_fdis <- lm(log_biomass ~ fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m_fdis) # p-value = 0.0176 *
 
-m_fdis <- lm(log_produt ~ fdis_sla + fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m_fdis)
+m_fdis <- lm(log_biomass ~ fdis_sla + fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m_fdis) #p=0.04034 *
 
 # FRic only
-m_fric <- lm(log_produt ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
+m_fric <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
 summary(m_fric)
 
 # 2. Nonlinear (quadratic) test for FDis
-m_fdis_quad <- lm(log_produt ~ cwm_ldmc + cwm_wd +
+m_fdis_quad <- lm(log_biomass ~ cwm_ldmc + cwm_wd +
                     fdis_ldmc + I(fdis_ldmc^2), data = dadosreg)
-summary(m_fdis_quad)
+summary(m_fdis_quad) # p-value: 0.08198
 
 ### Decoupled ###
 
-produt.dcF <- lm(log_produt~dcF,data = dadosreg)
-summary(produt.dcF) # p-value: 0.148
+produt.dcF <- lm(log_biomass~dcF,data = dadosreg)
+summary(produt.dcF) # p-value: 0.0379 *
 residuos_dcF <- residuals(produt.dcF)
 shapiro.test(residuos_dcF) #NORMAL
 
-produt.dcP <- lm(log_produt~dcP,data = dadosreg)
-summary(produt.dcP) # p-value: 0.616
+produt.dcP <- lm(log_biomass~dcP,data = dadosreg)
+summary(produt.dcP) # p-value: 0.432
 residuos_dcP <- residuals(produt.dcP)
 shapiro.test(residuos_dcP) #NORMAL
 
-s <- lm(log_produt~cwm_ldmc+cwm_wd+dcF,data = dadosreg)
+s <- lm(log_biomass~cwm_ldmc+cwm_wd+dcF,data = dadosreg)
 summary(s)
 
-ss <- lm(log_produt~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
+ss <- lm(log_biomass~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
 summary(ss)
+
+# test
+
+ntrees <- lm(log_biomass~n_trees, data = dadosreg)
+summary(ntrees) # p= 0.933
+
+ntrees <- lm(cwm_ldmc~n_trees, data = dadosreg)
+summary(ntrees) # p= 0.933
+
+## Candidate models
+
+# Functional (dispersion)
+m1 <- lm(log_biomass~fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m1) # p= 0.0176
+
+# CWM (identity)
+m2 <- lm(log_biomass~cwm_ldmc + cwm_wd, data = dadosreg)
+summary(m2) # p= 0.02186
+
+# Phylogenetic
+
+m3 <- lm(log_biomass~SESMNTD, data = dadosreg)
+summary(m3) # p= 0.0331
+
+m4 <- lm(log_biomass~PSC, data = dadosreg)
+summary(m4) # p= 0.04558
+
+model_selection <- model.sel(
+  m1 = m1,
+  m2 = m2,
+  m3 = m3,
+  m4 = m4,
+  rank = "AICc"
+)
+
+model_table <- as.data.frame(model_selection) %>%
+  mutate(Model = rownames(.)) %>%
+  select(Model, df, logLik, AICc, delta, weight)
+
+model_table
+
+model.avg(model_selection)
 
 
 # ---- Plot ----

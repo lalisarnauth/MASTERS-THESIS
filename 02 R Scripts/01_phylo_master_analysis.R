@@ -407,7 +407,6 @@ dev.off()
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
-
 # OFICIAL ### site as random variable
 
 modelo_nulo <- lmer(log_produt ~ (1|site), data = dadosmisto, REML = FALSE)
@@ -508,6 +507,13 @@ summary(msel)
 r.squaredGLMM(msel) # 0.6421902
 AICc(msel) # 50.21553
 ### NEW BEST MODEL
+
+msr <- lmer(sr ~ n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(msr)
+
+ms <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + idade_anos + (1 | site), data = dadosmisto, REML = FALSE)
+summary(ms)
+AICc(ms)
 
 m_int_pcps <- lmer(log_produt ~ pcps1 * n_trees + (1 | site),
   data = dadosmisto, REML = FALSE)
@@ -659,11 +665,10 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/coefplot_msel.jpeg",
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
-dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 ## SR 
 
-fit <- lm(log_produt ~ sr, data = dadosmisto1)
+fit <- lm(log(biomassa_z_kg) ~ sr, data = dadosmisto)
 summary(fit)
 
 r2  <- summary(fit)$r.squared
@@ -674,24 +679,22 @@ subtxt <- sprintf("R\u00B2 = %.2f; p = %s",
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
 
-g <- ggplot(dadosmisto1, aes(sr, log_produt)) +
+g <- ggplot(dadosmisto, aes(sr, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "yellow") +
   labs(
-    x = "Species richness (SR)",
-    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    x = "Species Richness (SR)",
+    y = expression("log Biomass (kg)"),
     subtitle = subtxt
   ) +
   theme_minimal(base_size = 11)
 g
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_SR.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
-
-
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logbiomass_SR.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 ## Silte
 
-fit <- lm(log_produt ~ silte, data = dadosmisto1)
+fit <- lm(log_biomass ~ silte, data = dadosmisto)
 s   <- summary(fit)
 
 r2  <- s$r.squared
@@ -704,12 +707,12 @@ subtxt <- sprintf("R\u00B2 = %.2f; p %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
-g <- ggplot(dadosmisto1, aes(silte, log_produt)) +
+g <- ggplot(dadosmisto, aes(silte, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "brown") +
   labs(
     x = "Soil silt content (%)",
-    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     subtitle = subtxt
   ) +
   theme_minimal(base_size = 11) +
@@ -717,12 +720,11 @@ g <- ggplot(dadosmisto1, aes(silte, log_produt)) +
 
 g
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_silt.jpeg", g,
-       width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logbiomass_silt.jpeg", g,width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 ## Soil C:N
 
-fit <- lm(log_produt ~ c.n_soloid, data = dadosmisto1)
+fit <- lm(logbiomass ~ c.n_soloid, data = dadosmisto)
 s   <- summary(fit)
 
 r2  <- s$r.squared
@@ -735,12 +737,12 @@ subtxt <- sprintf("R\u00B2 = %.2f; p %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
-g <- ggplot(dadosmisto1, aes(c.n_soloid, log_produt)) +
+g <- ggplot(dadosmisto, aes(c.n_soloid, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "orange") +
   labs(
     x = "Soil C:N ratio",
-    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     subtitle = subtxt
   ) +
   theme_minimal(base_size = 11) +
@@ -748,13 +750,12 @@ g <- ggplot(dadosmisto1, aes(c.n_soloid, log_produt)) +
 
 g
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_c.n_soloid.jpeg", g,
-       width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logbiomass_c.n_soloid.jpeg", g,width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 
 ## PCPS1
 
-fit <- lm(log_produt ~ pcps1, data = dadosmisto1)
+fit <- lm(log_biomass ~ pcps1, data = dadosmisto)
 s   <- summary(fit)
 
 r2  <- s$r.squared
@@ -767,12 +768,12 @@ subtxt <- sprintf("R\u00B2 = %.2f; p= %s",
                   r2,
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
-g <- ggplot(dadosmisto1, aes(pcps1, log_produt)) +
+g <- ggplot(dadosmisto, aes(pcps1, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "blue") +
   labs(
     x = "PCPS Axis 1",
-    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     subtitle = subtxt
   ) +
   theme_minimal(base_size = 11) +
@@ -780,24 +781,11 @@ g <- ggplot(dadosmisto1, aes(pcps1, log_produt)) +
 
 g
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_pcps1.jpeg", g,
-       width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
-##
-
-ggplot(dadosmisto1, aes(x = pcps1, y = log_produt, color = site)) +
-  geom_point(size = 3, alpha = 0.8) +
-  geom_smooth(method = "lm", se = FALSE, color = "black") +
-  theme_classic(base_size = 14) +
-  labs(
-    title = "Relationship between PCPS1 and productivity",
-    x = "PCPS1 (phylogenetic composition)",
-    y = "log(productivity)"
-  )
-
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logbiomass_pcps1.jpeg", g,width = 15, height = 10, units = "cm", dpi = 600, bg = "white")
 
 ## PPT Seasonality 
 
-fit <- lm(log_produt ~ season_ppt, data = dadosmisto1)
+fit <- lm(log_biomass ~ season_ppt, data = dadosmisto)
 summary(fit)
 
 r2  <- summary(fit)$r.squared
@@ -808,18 +796,18 @@ subtxt <- sprintf("R\u00B2 = %.2f; p = %s",
                   ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
 
 
-g <- ggplot(dadosmisto1, aes(season_ppt, log_produt)) +
+g <- ggplot(dadosmisto, aes(season_ppt, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", se = TRUE, colour = "lightblue") +
   labs(
     x = "PPT Seasonality",
-    y = expression("log Biomass accumulation (g m"^-2*" year"^-1*")"),
+    y = expression("log Biomass (kg)"),
     subtitle = subtxt
   ) +
   theme_minimal(base_size = 11)
 g
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/logprodut_season_ppt.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+ggsave("~/01 Masters_LA/06 Figures/02 plots/logbiomass_season_ppt.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
 
 #### FACET WRAP ### ----
 
