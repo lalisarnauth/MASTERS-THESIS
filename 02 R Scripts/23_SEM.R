@@ -610,34 +610,6 @@ fit_K2 <- lavaan::sem(
 
 summary(fit_K2, standardized = TRUE, fit.measures = TRUE)
 
-# ---- Model L ----
-
-L <- '
-  # Climate → soil
-  c.n_soloid ~ season_ppt
-
-  # Dominant trait (wood density CWM)
-  wd_CWM ~ season_ppt + c.n_soloid + n_trees
-
-  # Phylogenetic structure
-  pcps1 ~ pse + faba
-
-  # Biomass production
-  biomassa_z_kg ~ n_trees + pcps1 + c.n_soloid + wd_CWM
-
-  # Covariances
-  pse ~~ faba
-  season_ppt ~~ pse
-'
-
-fit_L <- lavaan::sem(
-  L,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_L, standardized = TRUE, fit.measures = TRUE)
-
 # ---- Model K3 ---- 
 
 K3 <- '
@@ -665,3 +637,312 @@ fit_K3 <- lavaan::sem(
 )
 
 summary(fit_K3, standardized = TRUE, fit.measures = TRUE)
+
+# ---- Model L ---- SR and N Trees
+
+L <- '
+  # Climate → Soil
+  c.n_soloid ~ season_ppt
+
+  # Climate → Richness
+  sr ~ season_temp + pet
+
+  # Richness → Structure
+  n_trees ~ sr
+
+  # Phylogenetic identity
+  pcps1 ~ pse + faba
+
+  # Biomass accumulation (final response)
+  log_produt ~ season_ppt + c.n_soloid + n_trees + pcps1
+
+  # (optional) exogenous covariances if you want to allow correlation among drivers:
+  season_ppt ~~ season_temp + pet + pse + faba
+  season_temp ~~ pet
+  pse ~~ faba
+'
+
+fit_L <- lavaan::sem(L, data = dados_scaled, estimator = "ML")
+
+summary(fit_L, standardized = TRUE, fit.measures = TRUE)
+
+# ---- Model L - SR > N trees > Biomass ----
+
+L <- '
+
+  # Solo
+  c.n_solo ~ season_ppt
+
+  # Estrutura
+  n_trees ~ sr
+
+  # Identidade
+  pcps1 ~ pse + faba
+
+  # Biomassa
+  log_biomass ~ c.n_soloid + n_trees + pcps1
+
+  # Covariâncias
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+
+fit_L <- lavaan::sem(
+  L,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_L, standardized = TRUE, fit.measures = TRUE)
+# CFI = 0.621
+
+# ---- Model L2 - N trees > SR > Biomass ----
+
+L2 <- '
+
+  # Solo
+  c.n_solo ~ season_ppt
+
+  # Estrutura influencia riqueza
+  sr ~ n_trees
+
+  # Identidade
+  pcps1 ~ pse + faba
+
+  # Biomassa
+  log_biomass ~ c.n_soloid + sr + pcps1
+
+  # Covariâncias exógenas
+  pse ~~ faba
+  season_ppt ~~ pse
+
+'
+fit_L2 <- lavaan::sem(
+  L2,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_L2, standardized = TRUE, fit.measures = TRUE)
+# CFI = 0.542
+
+# ---- L3 ----
+
+L3 <- '
+
+  # Solo
+  c.n_solo ~ season_ppt
+
+  # Estrutura
+  n_trees ~ PC1nutri + gini + wd_FDis
+
+  # Identidade
+  pcps1 ~ pse + faba
+
+  # Biomassa
+  log_biomass ~ c.n_solo + n_trees + pcps1
+
+  # Covariâncias
+  pse ~~ faba
+  season_ppt ~~ pse
+
+'
+fit_L3 <- lavaan::sem(
+  L3,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_L3, standardized = TRUE, fit.measures = TRUE)
+# CFI = 0.697
+
+cor(dados_scaled[, c("PC1nutri","wd_FDis","gini","season_ppt","pcps1")])
+
+# ---- L SR + PC1 ----
+L_SR_PC1 <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand structure
+  n_trees ~ b1*sr + b2*PC1nutri
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1 + d4*sr
+
+  # Covariances (keep your pattern)
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effects (THIS answers your question)
+  ind_sr := b1*d2
+  tot_sr := d4 + (b1*d2)
+'
+fit_SR_PC1 <- lavaan::sem(L_SR_PC1, data=dados_scaled, estimator="ML")
+summary(fit_SR_PC1, standardized=TRUE, fit.measures=TRUE)
+# CFI = 0.768
+
+fit_SR_PC1_b <- lavaan::sem(L_SR_PC1, data=dados_scaled, se="bootstrap", bootstrap=2000)
+parameterEstimates(fit_SR_PC1_b, standardized=TRUE) |> subset(op == ":=")
+
+# ---- L SR + WD ----
+
+L_SR_WD <- '
+
+  c.n_solo ~ a1*season_ppt
+
+  n_trees ~ b1*sr + b2*wd_FDis
+
+  pcps1 ~ c1*pse + c2*faba
+
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1 + d4*sr
+
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  ind_sr := b1*d2
+  tot_sr := d4 + (b1*d2)
+'
+fit_SR_WD <- lavaan::sem(L_SR_WD, data=dados_scaled, estimator="ML")
+summary(fit_SR_WD, standardized=TRUE, fit.measures=TRUE)
+# CFI = 0.917
+
+##
+
+lavaan::fitMeasures(fit_Lf, c("cfi","tli","rmsea","srmr","aic","bic"))
+lavaan::fitMeasures(fit_SR_PC1, c("cfi","tli","rmsea","srmr","aic","bic"))
+lavaan::fitMeasures(fit_SR_WD, c("cfi","tli","rmsea","srmr","aic","bic"))
+
+# ---- L5 - PC1nutri > N trees
+
+L_PC1_only <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand density
+  n_trees ~ b1*PC1nutri
+
+  # Identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+fit_L_PC1_only <- lavaan::sem(L_PC1_only, data=dados_scaled, estimator="ML")
+summary(fit_L_PC1_only, standardized=TRUE, fit.measures=TRUE)
+
+# ---- L6 - PC1nutri > SR > N trees
+
+L_PC1_SR <- '
+
+  c.n_solo ~ a1*season_ppt
+
+  sr ~ e1*PC1nutri
+
+  n_trees ~ b1*sr
+
+  pcps1 ~ c1*pse + c2*faba
+
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  ind_PC1 := e1*b1*d2
+'
+fit_L_PC1_SR <- lavaan::sem(L_PC1_SR, data=dados_scaled, estimator="ML")
+summary(fit_L_PC1_SR, standardized=TRUE, fit.measures=TRUE)
+
+# ---- WD only ----
+
+L_WD_only <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand density
+  n_trees ~ b1*wd_FDis
+
+  # Identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+'
+fit_L_WD_only <- lavaan::sem(L_WD_only, data=dados_scaled, estimator="ML")
+summary(fit_L_WD_only, standardized=TRUE, fit.measures=TRUE)
+
+# ---- inv_WD ----
+
+L_inv_WD <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Functional diversity structures richness
+  sr ~ e1*wd_FDis
+
+  # Stand density
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  biomassa_z_kg ~ d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effects
+  ind_wd := e1*b1*d2
+'
+fit_inv_WD <- lavaan::sem(L_inv_WD, data=dados_scaled, estimator="ML")
+summary(fit_inv_WD, standardized=TRUE, fit.measures=TRUE)
+# CFI = 0.917
+
+# ---- L final ----
+##### ---- inv_WD_pptDirect ----
+
+L_inv_WD_pptDirect <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Functional diversity structures richness
+  sr ~ e1*wd_FDis
+
+  # Stand density
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass (add direct effect of season_ppt)
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effect of WD on biomass via SR and n_trees (through d2)
+  ind_wd := e1*b1*d2
+
+  # Optional: total effect of season_ppt on biomass (direct + via soil)
+  tot_ppt := d0 + (a1*d1)
+'
+fit_inv_WD_pptDirect <- lavaan::sem(L_inv_WD_pptDirect, data=dados_scaled, estimator="ML")
+summary(fit_inv_WD_pptDirect, standardized=TRUE, fit.measures=TRUE)

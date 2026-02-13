@@ -431,6 +431,14 @@ model.avg(model_selection)
 sw(model_selection) # fdis_ldmc and fdis_wd have the largest Σwi (0.37 each)
 
 
+m1 <- lm(log_biomass~fdis_ldmc + fdis_wd + cwm_ldmc + cwm_wd, data = dadosreg)
+summary(m1)
+
+vif(m1)
+
+cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))
+
+
 # ---- Plot ----
 
 # ---- INDIVIDUAL PLOTS ----
