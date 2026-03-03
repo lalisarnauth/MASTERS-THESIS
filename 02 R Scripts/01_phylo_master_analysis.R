@@ -428,6 +428,14 @@ m4 <- lmer(log(biomassa_z_kg) ~ sespd + n_trees + (1 | site), data = dadosmisto,
 summary(m4) 
 AICc(m4) # 68.22905
 
+mpse <- lmer(log(biomassa_z_kg) ~ pse + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(mpse) # 0.355
+AICc(mpse) # 67.96459
+
+mpsv <- lmer(log(biomassa_z_kg) ~ psv + n_trees + (1 | site), data = dadosmisto, REML = FALSE)
+summary(mpsv) # 0.609
+AICc(mpsv) # 68.51201
+
 m5 <- lmer(log_produt ~ riq_inicial + (1 | site), data = dadosmisto, REML = FALSE)
 summary(m5) # p-value = 0.904   
 AICc(m5) # 81.81974
@@ -508,8 +516,9 @@ r.squaredGLMM(msel) # 0.6421902
 AICc(msel) # 50.21553
 ### NEW BEST MODEL
 
-msr <- lmer(sr ~ n_trees + (1 | site), data = dadosmisto, REML = FALSE)
-summary(msr)
+mfaba <- lmer(log_biomass ~ n_trees + pcps1 + faba + (1 | site), data = dadosmisto, REML = FALSE)
+summary(mfaba)
+vif(mfaba)
 
 ms <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + idade_anos + (1 | site), data = dadosmisto, REML = FALSE)
 summary(ms)
@@ -580,8 +589,6 @@ AICc(c1)                 # 69.51542
 
 ### ---- PLOTS ----
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
-
-dadosmisto1 <- dadosmisto[-c(1:7), ]
 
 #### COEFPLOT #### 
 
@@ -660,8 +667,7 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/coefplot_msel.jpeg",
 
 
 
-#### PLOTs GLM ### ----
-
+#### PLOTs GLM ----
 
 dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
@@ -1053,17 +1059,18 @@ apg_arrows$labels <- c("Anac", "Anno", "Apocy", "Aster", "Bigno", "Borag", "Cann
 # Merging the data into a single data.frame
 df_plot <- cbind(as.data.frame(scores_sites),
                  Biomass = dadosmisto$biomassa_z_kg,
-                 SESPD = dadosmisto$sespd)
+                 SESPD = dadosmisto$sespd,
+                 PSE = dadosmisto$pse)
 
 ## only sespd
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
-  geom_point(aes(color = SESPD), size = 3) +
+  geom_point(aes(color = PSE), size = 3) +
   scale_colour_gradientn(
     colors = c("red", "pink", "#FAFD77", "black"),
-    values = scales::rescale(c(-4, -2, 0, 2)),
-    limits = c(-5, 2),
+    limits = c(0.06, 0.90),
     oob = scales::squish,
-    name = "sesPD"
+    breaks = c(0.1, 0.3, 0.5, 0.7, 0.9),
+    name = "PSE"
   ) +
   labs(
     x = paste0("PCPS1 (", pcps1_var, "%)"),
@@ -1085,7 +1092,7 @@ ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
     legend.text = element_text(size = 12)
   )
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_SESPD_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_PSE_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
 
 ### only biomass
 

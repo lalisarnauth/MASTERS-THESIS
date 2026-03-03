@@ -914,7 +914,6 @@ fit_inv_WD <- lavaan::sem(L_inv_WD, data=dados_scaled, estimator="ML")
 summary(fit_inv_WD, standardized=TRUE, fit.measures=TRUE)
 # CFI = 0.917
 
-# ---- L final ----
 ##### ---- inv_WD_pptDirect ----
 
 L_inv_WD_pptDirect <- '
@@ -946,3 +945,283 @@ L_inv_WD_pptDirect <- '
 '
 fit_inv_WD_pptDirect <- lavaan::sem(L_inv_WD_pptDirect, data=dados_scaled, estimator="ML")
 summary(fit_inv_WD_pptDirect, standardized=TRUE, fit.measures=TRUE)
+
+# ---- L final ----
+# ---- No FD ----
+
+L_inv_noFD_pptDirect <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand density structured by richness
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass (including direct climate effect)
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effect of precipitation on biomass via soil
+  ind_ppt_soil := a1*d1
+
+  # Total effect of precipitation on biomass
+  tot_ppt := d0 + (a1*d1)
+'
+fit_inv_noFD_pptDirect <- lavaan::sem(
+  L_inv_noFD_pptDirect,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_inv_noFD_pptDirect,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+# ---- Climate and PSE ----
+
+L_inv_climateFiltersPhylo <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Climate filtering phylogenetic diversity
+  pse ~ a2*season_ppt
+
+  # Stand density structured by richness
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+
+  # Indirect effects
+  ind_ppt_soil := a1*d1
+  ind_ppt_phylo := a2*c1*d3
+
+  # Total effect of precipitation on biomass
+  tot_ppt := d0 + (a1*d1) + (a2*c1*d3)
+'
+fit_inv_climateFiltersPhylo <- lavaan::sem(
+  L_inv_climateFiltersPhylo,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_inv_climateFiltersPhylo,
+        standardized = TRUE,
+        fit.measures = TRUE)
+
+# No direct effect season_ppt
+
+L_inv_noDirectClimate <- '
+
+  # Soil pathway
+  c.n_solo ~ a1*season_ppt
+
+  # Climate filtering phylogenetic diversity
+  pse ~ a2*season_ppt
+
+  # Stand density
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass (NO direct climate effect)
+  log_biomass ~ d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Indirect effects
+  ind_ppt_soil := a1*d1
+  ind_ppt_phylo := a2*c1*d3
+
+  # Total indirect effect
+  tot_ppt := (a1*d1) + (a2*c1*d3)
+'
+fit_inv_noDirectClimate <- lavaan::sem(
+  L_inv_noDirectClimate,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_inv_noDirectClimate,
+        standardized = TRUE,
+        fit.measures = TRUE)
+
+# PCPS affecting number of trees
+
+L_inv_noFD_pcps_to_density <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand density (richness + phylogenetic composition)
+  n_trees ~ b1*sr + b2*pcps1
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effects (optional, but useful)
+  ind_pcps_density := b2*d2
+  tot_pcps := d3 + (b2*d2)
+
+  ind_ppt_soil := a1*d1
+  tot_ppt := d0 + (a1*d1)
+'
+fit_pcps_to_density <- lavaan::sem(
+  L_inv_noFD_pcps_to_density,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_pcps_to_density, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+
+# PSE to density
+
+L_inv_pse_to_density <- '
+
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Stand density (richness + phylogenetic evenness)
+  n_trees ~ b1*sr + b3*pse
+
+  # Phylogenetic composition
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effects
+  ind_pse_density := b3*d2
+  tot_pse := (c1*d3) + (b3*d2)
+
+  ind_ppt_soil := a1*d1
+  tot_ppt := d0 + (a1*d1)
+'
+fit_pse_to_density <- lavaan::sem(
+  L_inv_pse_to_density,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_pse_to_density, standardized = TRUE, fit.measures = TRUE, rsquare = TRUE)
+
+
+# ---- M ----
+# Design: Rain controls Fabaceae; Fabaceae controls PSE; PSE and Fabaceae explain PCPS1
+
+L_design_A <- '
+  # Soil
+  c.n_solo ~ a1*season_ppt
+
+  # Design effect: drier sites -> more Fabaceae
+  faba ~ a3*season_ppt
+
+  # Fabaceae shifts phylogenetic diversity (design-driven)
+  pse ~ a4*faba
+
+  # Stand density
+  n_trees ~ b1*sr
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Indirects
+  ind_ppt_soil := a1*d1
+  ind_ppt_design_pcps := a3*c2*d3
+  ind_ppt_design_pse_pcps := a3*a4*c1*d3
+
+  tot_ppt := d0 + (a1*d1) + (a3*c2*d3) + (a3*a4*c1*d3)
+'
+fit_design_A <- lavaan::sem(L_design_A, data=dados_scaled, estimator="ML")
+summary(fit_design_A, standardized=TRUE, fit.measures=TRUE)
+
+# B
+
+L_mixed <- '
+  c.n_solo ~ a1*season_ppt
+  pse ~ a2*season_ppt
+  faba ~ a3*season_ppt
+
+  n_trees ~ b1*sr
+  pcps1 ~ c1*pse + c2*faba
+
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  ind_ppt_soil := a1*d1
+  ind_ppt_phylo := a2*c1*d3
+  ind_ppt_design := a3*c2*d3
+
+  tot_ppt := d0 + (a1*d1) + (a2*c1*d3) + (a3*c2*d3)
+'
+fit_mixed <- lavaan::sem(L_mixed, data=dados_scaled, estimator="ML")
+summary(fit_mixed, standardized=TRUE, fit.measures=TRUE)
+
+# ---- k ----
+
+k <- '
+
+  # Soil (climate → soil)
+  c.n_solo ~ a1*season_ppt
+
+  # Structural inequality (phylogenetic diversity → structure)
+  gini ~ g1*sespd
+
+  # Stand density (phylogenetic diversity + structure)
+  n_trees ~ b1*sespd + b2*gini
+
+  # Phylogenetic identity
+  pcps1 ~ c1*pse + c2*faba
+
+  # Biomass
+  log_biomass ~ d0*season_ppt + d1*c.n_solo + d2*n_trees + d3*pcps1
+
+  # Covariances
+  pse ~~ faba
+  season_ppt ~~ pse
+
+  # Indirect effects
+  ind_sesPD_via_gini := g1*b2                 # sespd → gini → n_trees
+  ind_sesPD_to_biomass := (g1*b2 + b1)*d2     # total sespd → n_trees (direct + via gini) → biomass
+  ind_ppt_soil := a1*d1
+  tot_ppt := d0 + (a1*d1)
+'
+
+fit_k <- lavaan::sem(
+  k,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(
+  fit_k,
+  standardized = TRUE,
+  fit.measures = TRUE,
+  rsquare = TRUE
+)

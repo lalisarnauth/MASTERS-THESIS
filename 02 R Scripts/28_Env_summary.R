@@ -4,7 +4,7 @@ library(tidyr)
 # Environmental variables to summarize
 env_vars <- c("ppt", "tmax", "tmin", "pet", "vpd", 
               "declividade", "c_solo", "n_solo",
-              "season_temp", "season_ppt","n_trees")
+              "season_temp", "season_ppt","n_trees","c.n_solo")
 
 env_summary <- dadosmisto %>%
   select(all_of(env_vars)) %>%

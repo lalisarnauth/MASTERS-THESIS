@@ -13,6 +13,7 @@
 library(FD)
 library(tidyverse)
 library(MuMIn) #AICc
+library(car)
 library(readxl)
 library(openxlsx)
 library(writexl)
@@ -431,10 +432,10 @@ model.avg(model_selection)
 sw(model_selection) # fdis_ldmc and fdis_wd have the largest Σwi (0.37 each)
 
 
-m1 <- lm(log_biomass~fdis_ldmc + fdis_wd + cwm_ldmc + cwm_wd, data = dadosreg)
-summary(m1)
+m <- lm(log_biomass~fdis_ldmc + fdis_wd + cwm_ldmc + cwm_wd, data = dadosreg)
+summary(m)
 
-vif(m1)
+vif(m)
 
 cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))
 
@@ -521,7 +522,7 @@ ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/FDis_LDMC.jpeg"
 ## SR ##
 
 # Fit the model
-fit <- lm(log_produt ~ SR, data = dadosreg)
+fit <- lm(log_biomass ~ SR, data = dadosreg)
 summary(fit)
 
 # Extract R² e p-value
@@ -535,14 +536,12 @@ subtxt <- sprintf("R² = %.2f\np = %s",
 
 # plot
 g <- dadosreg %>%
-  ggplot(aes(SR, log_produt)) +
+  ggplot(aes(SR, log_biomass)) +
   geom_point(size = 3, alpha = 0.5) + 
   geom_smooth(method = "lm", se = TRUE, colour = "orange") +
   labs(
     x = "Species Richness",
-    y = expression("log Biomass (kg)"),
-    title = "The Relationship between Species Richness and Biomass"
-  ) +
+    y = expression("log Biomass (kg)")) +
   annotate("text", 
            x = max(dadosreg$SR, na.rm = TRUE) * 0.28, 
            y = max(dadosreg$log_produt, na.rm = TRUE) * 1.002, 
@@ -676,7 +675,7 @@ p1 <- ggplot() +
   labs(
     x = "FDis LDMC",
     y = "log(Biomass)",
-    title = "(a) Effect of LDMC functional dispersion"
+    title = "(a)"
   ) +
   theme_classic()
 
@@ -694,7 +693,7 @@ p2 <- ggplot() +
   labs(
     x = "FDis Wood Density",
     y = "log(Biomass)",
-    title = "(b) Effect of WD functional dispersion"
+    title = "(b)"
   ) +
   theme_classic()
 
@@ -731,7 +730,7 @@ p1_cwm <- ggplot() +
   labs(
     x = "CWM LDMC",
     y = "log(Biomass)",
-    title = "(a) Effect of community-weighted mean LDMC"
+    title = "(a)"
   ) +
   theme_classic()
 
@@ -747,9 +746,9 @@ p2_cwm <- ggplot() +
               aes(x = x, ymin = conf.low, ymax = conf.high),
               alpha = 0.2) +
   labs(
-    x = "CWM Wood Density",
+    x = "CWM WD",
     y = "log(Biomass)",
-    title = "(b) Effect of community-weighted mean wood density"
+    title = "(b)"
   ) +
   theme_classic()
 
