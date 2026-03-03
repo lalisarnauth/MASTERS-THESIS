@@ -25,6 +25,7 @@ library(purrr)
 library(stringr)
 library(dplyr)
 library(plotly) # Masks dplyr filter()
+library(broom)
 
 
 #### FUNCTIONAL MICO-LEÃO ####
@@ -864,9 +865,81 @@ modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis ==
 summary(modelo_ml) # not significant
 summary(modelo_regua) # not significant
  
-
-
 # ---- COEFPLOT ----
+
+#  keep same rows across all models (recommended) 
+dados_uni <- dadosreg %>%
+  dplyr::select(log_biomass, fdis, fdis_ldmc, fdis_wd, fdis_sla,
+                cwm_ldmc, cwm_wd, SESPD, SESMNTD, SR) %>%
+  tidyr::drop_na()
+
+# Predictors in the EXACT order (top -> bottom in the plot)
+preds <- c("fdis",
+           "fdis_ldmc", "fdis_wd", "fdis_sla",
+           "cwm_ldmc", "cwm_wd",
+           "SESPD", "SESMNTD",
+           "SR")
+
+labels <- c(
+  fdis      = "FDis (overall)",
+  fdis_ldmc = "FDis LDMC",
+  fdis_wd   = "FDis Wood Density",
+  fdis_sla  = "FDis SLA",
+  cwm_ldmc  = "CWM LDMC",
+  cwm_wd    = "CWM Wood Density",
+  SESPD     = "sesPD",
+  SESMNTD   = "sesMNTD",
+  SR        = "Species Richness"
+)
+
+# One univariate standardized model per predictor
+mods <- map(preds, \(p){
+  form <- reformulate(termlabels = sprintf("scale(%s)", p),
+                      response   = "scale(log_biomass)")
+  lm(form, data = dados_uni)
+})
+names(mods) <- preds
+
+coef_all_uni <- imap_dfr(mods, \(mod, pred){
+  tidy(mod, conf.int = TRUE) %>%
+    filter(term != "(Intercept)") %>%
+    mutate(
+      predictor = pred,
+      term = labels[[pred]],
+      sig = p.value < 0.05
+    )
+})
+
+# Factor levels to control y-order (ggplot shows first level at bottom, so we reverse)
+desired_order <- labels[preds]  # top->bottom target order
+coef_all_uni <- coef_all_uni %>%
+  mutate(term = factor(term, levels = rev(desired_order)))
+
+# Plot
+coef_plot_uni <- ggplot(coef_all_uni, aes(x = estimate, y = term)) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_errorbar(
+    aes(xmin = conf.low, xmax = conf.high),
+    height = 0.2,
+    orientation = "y"
+  ) +
+  geom_point(aes(shape = sig), size = 3) +
+  scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1)) +
+  labs(x = "Standardized effect size (β)", y = NULL) +
+  theme_classic()
+
+coef_plot_uni
+
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Coefplot_Univar_Funct.jpeg",
+  plot = coef_plot_uni,
+  width = 6,
+  height = 5,
+  units = "in",
+  dpi = 300
+)
+
+# ---- COEFPLOT - Partial ----
 
 # Models scaled
 m1z <- lm(scale(log_biomass) ~ scale(fdis_ldmc) + scale(fdis_wd), data = dadosreg)
