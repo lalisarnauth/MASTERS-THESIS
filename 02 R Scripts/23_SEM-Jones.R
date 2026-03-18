@@ -5,7 +5,7 @@ library(lavaan)
 
 # Load the data
 
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE)
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 # Scale
 
@@ -238,3 +238,17 @@ fit_K2 <- lavaan::sem(
 )
 
 summary(fit_K2, standardized = TRUE, fit.measures = TRUE)
+
+install.packages("usethis")
+install.packages("gitcreds")
+library(usethis) 
+library(gitcreds)
+
+use_git_config(user.name = "lalisarnauth",user.email="laila.iglesasias1@gmail.com")
+                
+                
+                
+                
+                
+                
+                

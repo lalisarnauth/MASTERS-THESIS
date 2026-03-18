@@ -254,10 +254,7 @@ write_xlsx(data_diversity,
 
 # ---- DATA EXPLORATION ----
 
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                                 header = TRUE)
-
-dadosmisto1 <- dadosmisto[-c(1:7), ]
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 png("~/01 Masters_LA/06 Figures/01 exploratory_plots/hist_biomass.png", width = 800, height = 600)
 hist(dadosmisto$biomassa_z_kg, main="Histograma Biomassa", xlab="Valores", col="blue", border="black")
