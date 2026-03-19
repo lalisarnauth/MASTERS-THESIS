@@ -254,10 +254,7 @@ write_xlsx(data_diversity,
 
 # ---- DATA EXPLORATION ----
 
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",
-                                 header = TRUE)
-
-dadosmisto1 <- dadosmisto[-c(1:7), ]
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
 
 png("~/01 Masters_LA/06 Figures/01 exploratory_plots/hist_biomass.png", width = 800, height = 600)
 hist(dadosmisto$biomassa_z_kg, main="Histograma Biomassa", xlab="Valores", col="blue", border="black")
@@ -367,11 +364,6 @@ labels_pretty <- c(
   sespd = "sesPD",
   pse = "PSE",
   pcps1 = "PCPS1",
-  wd_CWM = "WD_CWM",
-  ldmc_CWM = "LDMC CWM",
-  wd_FDis = "WD FDis",
-  ldmc_FDis = "LDMC FDis",
-  n_trees = "Number of Trees",
   fdis_nfix = "Nfix FDis",
   cwm_nfix = "Nfix CWM"
 )
@@ -401,6 +393,94 @@ corrplot(cor_matrix_x,
 
 dev.off()
 
+# Envitonmental + Diversity
+
+variables_all <- c(
+  # Climate
+  "ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima",
+  
+  # Topography + soil
+  "altitude", "declividade", "silte", "ph", "valor_s", "valor_t",
+  "PC1nutri", "PC2nutri",
+  
+  # Seasonality
+  "season_temp", "season_ppt",
+  
+  # Soil structure
+  "c.n_soloid",
+  
+  # Stand structure
+  "n_trees",
+  
+  # Diversity (taxonomic + phylogenetic)
+  "sr", "sespd", "pse", "pcps1",
+  
+  # Functional traits
+  "wd_CWM", "ldmc_CWM", "wd_FDis", "ldmc_FDis",
+  
+  # Functional groups
+  "fdis_nfix", "cwm_nfix"
+)
+
+labels_pretty <- c(
+  ppt         = "Precipitation",
+  tmax        = "Max Temp",
+  tmin        = "Min Temp",
+  pet         = "PET",
+  vpd         = "VPD",
+  mcwd        = "MCWD",
+  PC1_clima   = "Climate PC1",
+  
+  altitude    = "Altitude",
+  declividade = "Slope",
+  silte       = "Silt",
+  ph          = "Soil pH",
+  valor_s     = "Soil S",
+  valor_t     = "Soil T",
+  PC1nutri    = "Nutrients PC1",
+  PC2nutri    = "Nutrients PC2",
+  
+  season_temp = "Temp Seasonality",
+  season_ppt  = "PPT Seasonality",
+  
+  c.n_soloid  = "Soil C:N",
+  n_trees     = "Tree Density",
+  
+  sr          = "SR",
+  sespd       = "sesPD",
+  pse         = "PSE",
+  pcps1       = "PCPS1",
+  
+  wd_CWM      = "WD (CWM)",
+  ldmc_CWM    = "LDMC (CWM)",
+  wd_FDis     = "WD (FDis)",
+  ldmc_FDis   = "LDMC (FDis)",
+  
+  fdis_nfix   = "Nfix (FDis)",
+  cwm_nfix    = "Nfix (CWM)"
+)
+
+data_all <- data %>%
+  dplyr::select(all_of(variables_all))
+
+
+cor_matrix_all <- cor(data_all, use = "complete.obs")
+
+# Rename axes
+rownames(cor_matrix_all) <- labels_pretty[variables_all]
+colnames(cor_matrix_all) <- labels_pretty[variables_all]
+
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_all_variables.png",
+    width = 1400, height = 1000, res = 150)
+
+corrplot(cor_matrix_all,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.7,
+         number.cex = 0.5)
+
+dev.off()
 
 
 # ---- LMMs ----
