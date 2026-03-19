@@ -11,14 +11,134 @@ dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,ro
 
 dados_scaled <- as.data.frame(scale(dadosmisto[, sapply(dadosmisto, is.numeric)]))
 
-# ---- H1: Climate and Diversity ---- 
+# ---- H1: Environment only indirect and Diversity direct ---- 
+
+H1 <- '
+  n_trees ~~ sr
+  pcps1 ~~ sespd
+  
+  n_trees ~ PC1_clima
+  pcps1 ~ PC1_clima + c.n_solo
+  log_biomass ~ n_trees + sr + pcps1 + sespd
+'
+
+fit_H1 <- lavaan::sem(
+  H1,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_H1,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+
+# CFI: 0.768
+
+# ---- H2: Environment is the driver ---- 
+
+H2 <- '
+  n_trees ~~ sr
+  pcps1 ~~ sespd
+  
+  n_trees ~ PC1_clima
+  pcps1 ~ PC1_clima + c.n_solo
+  log_biomass ~ n_trees + PC1_clima + c.n_solo
+'
+
+fit_H2 <- lavaan::sem(
+  H2,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_H2,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+# CFI: 0.914
+
+# ---- H3: Environment & composition affect N. trees ---- 
+
+H3 <- '
+  pcps1 ~~ sespd
+  
+  pcps1 ~ PC1_clima + c.n_solo
+  n_trees ~ PC1_clima + sr + pcps1 + c.n_solo
+    log_biomass ~ n_trees
+'
+
+fit_H3 <- lavaan::sem(
+  H3,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_H3,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+# CFI: 0.409
+
+
+# ---- H4: Environment, composition, structure ---- 
+
+H4 <- '
+  pcps1 ~~ sespd
+  n_trees ~~ sr
+  
+  n_trees ~ PC1nutri
+  pcps1 ~ PC1_clima
+  
+  log_biomass ~ n_trees + pcps1 + sr + sespd + c.n_solo
+'
+
+fit_H4 <- lavaan::sem(
+  H4,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_H4,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+# CFI: 0.952
+
+
+# ---- H5: Environment, composition, structure ---- 
+
+H5 <- '
+  pcps1 ~~ sespd
+  n_trees ~~ sr
+  
+  n_trees ~ PC1nutri
+  pcps1 ~ PC1_clima
+  c.n_solo ~ season_ppt + PC1_clima
+  
+  log_biomass ~ n_trees + pcps1 + sr + sespd + c.n_solo
+'
+
+fit_H5 <- lavaan::sem(
+  H5,
+  data = dados_scaled,
+  estimator = "ML"
+)
+
+summary(fit_H5,
+        standardized = TRUE,
+        fit.measures = TRUE,
+        rsquare = TRUE)
+
+# CFI: 0.670
 
 
 
-
-
-
-################################ OLD
+################################ OLD #############################
 
 # ---- H1: SR ---- 
 # PPT SEASON
