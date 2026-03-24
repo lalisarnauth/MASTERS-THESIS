@@ -33,7 +33,7 @@ library(broom)
 # Read data
 comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
 
-funcional_ml <- read.csv("01 Datasets/01_raw_data//funcional_ml.csv", row.names = 1, sep = ";")
+funcional_ml <- read.csv("01 Datasets/01_raw_data/funcional_ml.csv", row.names = 1, sep = ";")
 
 # Select traits
 atributos <- c("WD", "SLA", "LDMC")
@@ -50,7 +50,7 @@ resultado_fd_ml <- dbFD(
   corr = "cailliez"
 )
 
-# ---- Create Excel e with tabs ----
+# ---- Create Excel with tabs ----
 wb <- createWorkbook()
 
 # Add each metric

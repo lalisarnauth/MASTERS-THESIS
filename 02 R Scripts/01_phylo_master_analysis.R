@@ -41,8 +41,8 @@ library(phytools)
 
 
 # Install V.PhyloMaker2
-# install.packages("devtools")
-# devtools::install_github("jinyizju/V.PhyloMaker2")
+install.packages("devtools")
+devtools::install_github("jinyizju/V.PhyloMaker2")
 
 # input the sample species list
 example <- read_csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/filogenia_total.csv")
@@ -596,6 +596,9 @@ r.squaredGLMM(msel) # 0.6421902
 AICc(msel) # 50.21553
 ### NEW BEST MODEL
 
+mtest <- lmer(log(biomassa_z_kg) ~ pcps1 + pcps2 + (1 | site), data = dadosmisto, REML = FALSE)
+summary(mtest)
+
 mfaba <- lmer(log_biomass ~ n_trees + pcps1 + faba + (1 | site), data = dadosmisto, REML = FALSE)
 summary(mfaba)
 vif(mfaba)
@@ -1103,6 +1106,7 @@ std.pdis = (phylo.dissim-min(phylo.dissim))/(max(phylo.dissim)-min(phylo.dissim)
 pdis.ord = std.pdis[order(row.names(std.pdis)), order(row.names(std.pdis))]
 
 # install.packages("PCPS")
+library(PCPS)
 
 ### Importing the family groups
 # Define Phylogenetic groups
@@ -1111,7 +1115,6 @@ grupos <- example$family
 # Importing the community matrix
 comunidade <- read.csv("01 Datasets/01_raw_data/comunidade_abund_sem_csa.csv", row.names = 1,header = T, sep = ";")
 
-library(PCPS)
 # Running PCPS
 res <- pcps(comunidade, pdis.ord)
 summary(res)
@@ -1177,32 +1180,43 @@ ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_PSE_semCSA.jpeg", width = 15, h
 ### only biomass
 
 ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
+ 
+  geom_point(color = "black", size = 4.5, alpha = 0.6) +
+ 
   geom_point(aes(color = Biomass), size = 4) +
+  
   scale_colour_gradientn(
     colors = c("black", "lightyellow", "red"),
     name = "Aboveground \nBiomass (kg)"
   ) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  
   labs(
     x = paste0("PCPS1 (", pcps1_var, "%)"),
     y = paste0("PCPS2 (", pcps2_var, "%)")
   ) +
+  
   geom_label(
     data = apg_arrows,
     aes(x = pcps.1, y = pcps.2, label = labels),
     fontface = "bold", fill = "grey", alpha = 0.5,
     color = "black", size = 5
   ) +
+  
   theme_minimal() +
   theme(
     panel.grid = element_blank(),
     axis.line = element_line(color = "black", linewidth = 0.8),
-    axis.text = element_text(size = 11),
-    axis.title = element_text(size = 13),
+    axis.text = element_text(size = 13),
+    axis.title = element_text(size = 16),
     legend.title = element_text(size = 16),
     legend.text = element_text(size = 15)
   )
 
-ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_biomass_semCSA.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_oficial.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+
 
 
 #### Family contribution (%) to PCPS1 and PCPS2 ####
@@ -1264,6 +1278,30 @@ ggsave(
   width = 7, height = 5, dpi = 300
 )
 
+
+# PCPS2 contribution
+# Filter out the top 10 families that contribute the most to PCPS2
+fam_plot_top10_pcps2 <- fam_summary %>%
+  slice_max(order_by = Pct_PC2, n = 10) %>%
+  mutate(Family = reorder(Family, pcps.2))
+
+g_fam_pcps2_top10 <- ggplot(fam_plot_top10_pcps2, aes(x = pcps.2, y = Family)) +
+  geom_col(fill = "grey70") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  theme_classic(base_size = 13) +
+  labs(
+    title = "Top 10 family loadings on PCPS2",
+    x = "Centroid along PCPS2",
+    y = "Family"
+  )
+
+print(g_fam_pcps2_top10)
+
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/02 plots/PCPS2_family_loadings_top10.jpeg",
+  plot = g_fam_pcps2_top10,
+  width = 7, height = 5, dpi = 300
+)
 
 
 ### ---- PHYLOGENETIC SIGNAL ----
