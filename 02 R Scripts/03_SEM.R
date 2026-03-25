@@ -111,55 +111,12 @@ summary(fit_H4,
 
 # sespd was 0.952
 
-# ---- H5: Environment, composition, structure ---- 
 
-H5 <- '
-  pcps1 ~~ pse
-  n_trees ~~ sr
-  
-  n_trees ~ PC1nutri
-  pcps1 ~ PC1_clima
-  c.n_solo ~ season_ppt + PC1_clima
-  
-  log_biomass ~ n_trees + pcps1 + sr + pse + c.n_solo
-'
 
-fit_H5 <- lavaan::sem(
-  H5,
-  data = dados_scaled,
-  estimator = "ML"
-)
 
-summary(fit_H5,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
 
-# CFI: 0.682
 
-# ---- H6: Clean ---- 
 
-H6 <- '
-  n_trees ~~ sr
-  
-  n_trees ~ PC1nutri
-  pcps1 ~ PC1_clima
-  
-  log_biomass ~ n_trees + pcps1 + pcps2 + c.n_solo
-'
-
-fit_H6 <- lavaan::sem(
-  H6,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_H6,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
-
-# CFI = 0.935
 
 ################################ OLD #############################
 

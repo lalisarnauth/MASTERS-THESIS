@@ -2,7 +2,7 @@
 
 ### SCRIPT FOR PHYLOGENETIC ANALYSIS ###
 
-# Last update: 2025/01/15 (YYYY/MM/DD)
+# Last update: 2026/03/25 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias
 # Post Graduate Program in Ecology - UFRJ - Brazil
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
@@ -38,7 +38,6 @@ library(phytools)
 
 
 # ---- PHYLO TREE ----
-
 
 # Install V.PhyloMaker2
 install.packages("devtools")

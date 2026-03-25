@@ -3,7 +3,7 @@
 ###         2nd chapter           ####
 
 
-# last update: 2025/11/25 (YYYY/MM/DD)
+# last update: 2026/03/25 (YYYY/MM/DD)
 # Authors: Laíla Arnauth & André T. C. Dias
 # Post Graduate Program in Ecology - UFRJ - Brazil
 # Collaboration with University of Regina - Canada # Forest Dynamics Lab
@@ -28,12 +28,12 @@ library(plotly) # Masks dplyr filter()
 library(broom)
 
 
-#### FUNCTIONAL MICO-LEÃO ####
+#### MICO-LEÃO ####
 
 # Read data
 comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
 
-funcional_ml <- read.csv("01 Datasets/01_raw_data/funcional_ml.csv", row.names = 1, sep = ";")
+funcional_ml <- read.csv("01 Datasets/01_raw_data/funcional_ml.csv", row.names = 1)
 
 # Select traits
 atributos <- c("WD", "SLA", "LDMC")
@@ -96,7 +96,7 @@ saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Fun
 
 
 
-#### FUNCTIONAL REGUA ####
+#### REGUA ####
 
 # Read data
 comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
@@ -246,8 +246,7 @@ dev.off()
 
 # ---- GLMS ----
 
-
-dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
+dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE)
 
 # Functional diversity
 
@@ -442,6 +441,42 @@ summary(m)
 vif(m)
 
 cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))
+
+#### Rao Melodic ####
+
+# All traits
+
+mod_func <- lm(log_biomass ~ Rao_func, data = dadosreg)
+mod_phylo <- lm(log_biomass ~ Rao_phylo, data = dadosreg)
+mod_tax <- lm(log_biomass ~ Simpson, data = dadosreg)
+
+summary(mod_func)
+summary(mod_phylo)
+summary(mod_tax)
+
+mod_full <- lm(
+  log_biomass ~ Rao_func + Rao_phylo + Simpson,
+  data = dadosreg
+)
+
+summary(mod_full)
+vif(mod_full)
+
+# Individual Traits
+
+mod_SLA <- lm(log_biomass ~ Rao_SLA, data = dadosreg)
+mod_LDMC <- lm(log_biomass ~ Rao_LDMC, data = dadosreg)
+mod_WD <- lm(log_biomass ~ Rao_WD, data = dadosreg)
+
+summary(mod_SLA) # 0.464
+summary(mod_LDMC) # 0.304 
+summary(mod_WD) # 0.445    
+
+mod_LDMC_WD <- lm(log_biomass ~ Rao_LDMC + Rao_WD, data = dadosreg)
+summary(mod_LDMC_WD)
+# Rao_LDMC      3.1799     1.8142   1.753    0.095 .  
+# Rao_WD       -2.2572     1.4149  -1.595    0.126  
+
 
 
 # ---- Plot ----
@@ -1262,109 +1297,364 @@ dadosreg <- dadosreg %>%
 
 write.csv(dadosreg,file="~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv")
 
-####### Not used anymore ############
+
+
+# ---- Melodic function ----
+
+melodic <- function(samp, dis, type = "both"){
+  if(!is.matrix(samp)){samp <- as.matrix(samp)}
+  if(!is.matrix(dis)){dis <- as.matrix(dis)}
+  
+  if(is.null(colnames(samp)) | is.null(colnames(dis))){
+    stop("Both samp and dis must have colnames.\n")
+  }
+  
+  N <- dim(samp)[1]
+  melodic <- list()
+  
+  if(type == "both"){
+    melodic$abundance <- list()
+    melodic$abundance$mpd <- melodic$abundance$rao <- melodic$abundance$simpson <- numeric(N)
+    melodic$presence <- list()
+    melodic$presence$mpd <- melodic$presence$rao <- melodic$presence$simpson <- numeric(N)
+  }
+  
+  if(type == "abundance"){ 
+    melodic$abundance <- list()
+    melodic$abundance$mpd <- melodic$abundance$rao <- melodic$abundance$simpson <- numeric(N)
+  }
+  
+  if(type == "presence"){ 
+    melodic$presence <- list()
+    melodic$presence$mpd <- melodic$presence$rao <- melodic$presence$simpson <- numeric(N)
+  }
+  
+  melodic$richness <- numeric(N)
+  
+  for(i in 1:N){
+    sppInSample <- names(samp[i, samp[i, ] > 0])
+    melodic$richness[i] <- rowSums(samp > 0)[i]
+    
+    if(length(sppInSample) > 1){
+      sample.dis <- dis[sppInSample, sppInSample]
+      
+      if(type == "both" | type == "abundance"){
+        abund.w <- samp[i, sppInSample] / sum(samp[i, sppInSample])
+        sample.weights <- outer(abund.w, abund.w)
+        melodic$abundance$mpd[i] <- weighted.mean(
+          sample.dis[lower.tri(sample.dis)],
+          sample.weights[lower.tri(sample.weights)]
+        )
+        melodic$abundance$rao[i] <- sum(sample.weights * sample.dis)
+        melodic$abundance$simpson[i] <- sum(2 * sample.weights[lower.tri(sample.weights)])
+      }
+      
+      if(type == "both" | type == "presence"){
+        abund.nw <- rep(1, length(sppInSample)) / length(sppInSample)
+        sample.weights <- outer(abund.nw, abund.nw)
+        melodic$presence$mpd[i] <- weighted.mean(
+          sample.dis[lower.tri(sample.dis)],
+          sample.weights[lower.tri(sample.weights)]
+        )
+        melodic$presence$rao[i] <- sum(sample.weights * sample.dis)
+        melodic$presence$simpson[i] <- sum(2 * sample.weights[lower.tri(sample.weights)])
+      }
+      
+    } else {
+      if(type == "both" | type == "abundance"){
+        melodic$abundance$mpd[i] <- NA
+        melodic$abundance$rao[i] <- 0
+        melodic$abundance$simpson[i] <- 0
+      }
+      if(type == "both" | type == "presence"){
+        melodic$presence$mpd[i] <- NA
+        melodic$presence$rao[i] <- 0
+        melodic$presence$simpson[i] <- 0
+      }
+    }
+  }
+  
+  return(melodic)
+}
+
+
+#### ML ####
+
+comunidade_ml <- read.csv(
+  "01 Datasets/01_raw_data/comunidade_ml.csv",
+  row.names = 1, header = TRUE, sep = ";", check.names = FALSE
+)
+
+
+funcional_ml <- read.csv(
+  "01 Datasets/01_raw_data/funcional_ml.csv",
+  row.names = 1)
+
+atributos <- c("WD", "SLA", "LDMC")
+
+# use only selected traits
+functional_data <- funcional_ml[, atributos, drop = FALSE]
+
+# standardize
+
+functional_data_scaled <- scale(functional_data)
+
+# Dissim matrix
+
+dist_func_ml <- as.matrix(dist(functional_data_scaled, method = "euclidean"))
+
+# 0 and 1
+
+dist_func_ml <- dist_func_ml / max(dist_func_ml)
+
+# Run function melodic
+
+res_func_ml <- melodic(
+  samp = comunidade_ml,
+  dis = dist_func_ml,
+  type = "abundance"
+)
+
+
+melodic_ML <- data.frame(
+  plot = rownames(comunidade_ml),
+  richness = res_func_ml$richness,
+  MPD_func = res_func_ml$abundance$mpd,
+  Rao_func = res_func_ml$abundance$rao,
+  Simpson  = res_func_ml$abundance$simpson
+)
+
+write.csv(
+  melodic_ML,
+  "01 Datasets/02_processed_data/melodic_ML.csv",
+  row.names = FALSE
+)
+
+
+#### REGUA ####
+
+# Read data
+comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
+
+funcional_regua <- read.csv("01 Datasets/01_raw_data/funcional_regua.csv", 
+                            row.names = 1)
+
+# Select traits
+atributos <- c("WD", "SLA", "LDMC")
+
+# use only selected traits
+functional_data <- funcional_regua[, atributos, drop = FALSE]
+
+# standardize
+functional_data_scaled <- scale(functional_data)
+
+# Dissim matrix
+dist_func_regua <- as.matrix(dist(functional_data_scaled, method = "euclidean"))
+
+# 0 and 1
+dist_func_regua <- dist_func_regua / max(dist_func_regua)
+
+# Run function melodic
+res_func_regua <- melodic(
+  samp = comunidade_regua,
+  dis = dist_func_regua,
+  type = "abundance"
+)
+
+# Organize results
+melodic_REGUA <- data.frame(
+  plot = rownames(comunidade_regua),
+  richness = res_func_regua$richness,
+  MPD_func = res_func_regua$abundance$mpd,
+  Rao_func = res_func_regua$abundance$rao,
+  Simpson  = res_func_regua$abundance$simpson
+)
+
+# Save csv
+write.csv(
+  melodic_REGUA,
+  "01 Datasets/02_processed_data/melodic_REGUA.csv",
+  row.names = FALSE
+)
+
+
+melodic_ML$site <- "ML"
+melodic_REGUA$site <- "REGUA"
+
+# ---- Rao for each trait ----
+
+functional_data <- read.csv("C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/funcional_ml_regua.csv",
+  row.names = 1,header = TRUE, sep = ";")
+
+rownames(functional_data) <- gsub(" ", "_", trimws(rownames(functional_data)))
+ 
+colnames(comunidade_ml) <- gsub(" ", "_", trimws(colnames(comunidade_ml)))
+colnames(comunidade_regua) <- gsub(" ", "_", trimws(colnames(comunidade_regua)))
+
+rao_trait <- function(trait_df, comunidade){
+  
+  dist_mat <- as.matrix(dist(trait_df, method = "euclidean"))
+  
+  dist_mat <- dist_mat / max(dist_mat)
+  
+  res <- melodic(
+    samp = comunidade,
+    dis = dist_mat,
+    type = "abundance"
+  )
+  
+  return(res$abundance$rao)
+}
+
+# ML
+
+Rao_WD_ml   <- rao_trait(functional_data[, "WD", drop = FALSE], comunidade_ml)
+Rao_SLA_ml  <- rao_trait(functional_data[, "SLA", drop = FALSE], comunidade_ml)
+Rao_LDMC_ml <- rao_trait(functional_data[, "LDMC", drop = FALSE], comunidade_ml)
+
+Rao_WD_regua   <- rao_trait(functional_data[, "WD", drop = FALSE], comunidade_regua)
+Rao_SLA_regua  <- rao_trait(functional_data[, "SLA", drop = FALSE], comunidade_regua)
+Rao_LDMC_regua <- rao_trait(functional_data[, "LDMC", drop = FALSE], comunidade_regua)
+
+
+# organize Rao results
+
+rao_traits_ML <- data.frame(
+  plot = rownames(comunidade_ml),
+  Rao_WD = Rao_WD_ml,
+  Rao_SLA = Rao_SLA_ml,
+  Rao_LDMC = Rao_LDMC_ml,
+  site = "ML"
+)
+
+rao_traits_REGUA <- data.frame(
+  plot = rownames(comunidade_regua),
+  Rao_WD = Rao_WD_regua,
+  Rao_SLA = Rao_SLA_regua,
+  Rao_LDMC = Rao_LDMC_regua,
+  site = "REGUA"
+)
+
+# join ML + REGUA
+rao_traits_all <- rbind(rao_traits_ML, rao_traits_REGUA)
+
+# se dadosreg estiver com plot nos rownames
+dadosreg$plot <- rownames(dadosreg)
+
+
+dadosreg$plot <- rownames(dadosreg)
+colnames(dadosreg)
+
+# join
+dadosreg <- merge(dadosreg, rao_traits_all, by = c("plot", "site"), all.x = TRUE)
 
 
 
 
-### MODELO MISTO # SITE AS RANDOM VARIABLE ###
+# ---- Rao Phylogenetic ----
 
-library(lmerTest) #MODELO MISTO
-library(MuMIn) #AICc
+library("V.PhyloMaker2")
 
-# Modelo nulo sem os preditores fixos
-modelo_nulo <- lmer(log_produt ~ (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(modelo_nulo)
-AICc(modelo_nulo) # -12.20405
+# input the sample species list
+example <- read_csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/filogenia_total.csv")
 
+### generate a phylogeny for the sample species list
+tree <- phylo.maker(example, tree = GBOTB.extended.TPL,output.sp.list = TRUE,nodes = nodes.info.1.TPL, scenarios="S3")
+tree_ok <- tree$scenario.3
 
-misto1 <- lmer(log_produt ~ fric_wd + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto1)  # p-value = 0.68
-r.squaredGLMM(misto1) # 0.5769652
-AICc(misto1) # -9.418423
+# Prune tree
 
-misto2 <- lmer(log_produt ~ fric_sla + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto2)  # p-value = 0.816
-r.squaredGLMM(misto2) # 0.5712046
-AICc(misto2) # -9.296783
+colnames(comunidade_ml) <- gsub(" ", "_", trimws(colnames(comunidade_ml)))
+colnames(comunidade_regua) <- gsub(" ", "_", trimws(colnames(comunidade_regua)))
 
-misto3 <- lmer(log_produt ~ fric_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto3)  # p-value = 0.0643 .
-r.squaredGLMM(misto3) # 0.5857842
-AICc(misto3) # -12.76521
+spp_ml    <- colnames(comunidade_ml)
+spp_regua <- colnames(comunidade_regua)
 
-misto4 <- lmer(log_produt ~ fdis_wd + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto4)  # p-value = 0.839    
-r.squaredGLMM(misto4) # 0.5660719
-AICc(misto4) # -9.287176
+spp_total <- union(spp_ml, spp_regua)
 
-misto5 <- lmer(log_produt ~ fdis_sla + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto5)  # p-value = 0.617        
-r.squaredGLMM(misto5) # 0.5658284
-AICc(misto5) # -9.291259
+library(ape)
 
-misto6 <- lmer(log_produt ~ fdis_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto6)  # p-value = 0.229            
-r.squaredGLMM(misto6) # 0.5517717
-AICc(misto6) # -10.71563
+tree_subset <- drop.tip(tree_ok, setdiff(tree_ok$tip.label, spp_total))
 
-misto7 <- lmer(log_produt ~ cwm_wd + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto7)  # p-value = 0.658                
-r.squaredGLMM(misto7) # 0.5550451
-AICc(misto7) # -9.443239
+# Distance matrix
+phylo_dissim <- cophenetic(tree_subset)
 
-misto8 <- lmer(log_produt ~ cwm_sla + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto8)  # p-value = 0.592                
-r.squaredGLMM(misto8) # 0.5101121
-AICc(misto8) # -10.33825
+# 0 and 1
+phylo_dissim_std <- (phylo_dissim - min(phylo_dissim)) / 
+  (max(phylo_dissim) - min(phylo_dissim))
 
-misto9 <- lmer(log_produt ~ cwm_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto9)  # p-value = 0.955                    
-r.squaredGLMM(misto9) # 0.5641951
-AICc(misto9) # -9.248183
+# Melodic Rao phy calc - ML
 
-misto10 <- lmer(log_produt ~ fdis + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto10)  # p-value = 0.635                        
-r.squaredGLMM(misto10) # 0.5665168
-AICc(misto10) # -9.32659
+res_phylo_ml <- melodic(
+  samp = comunidade_ml,
+  dis = phylo_dissim_std,
+  type = "abundance"
+)
 
-misto11 <- lmer(log_produt ~ fric + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto11)  # p-value = 0.280460                            
-r.squaredGLMM(misto11) # 0.606324
-AICc(misto11) # -10.66883
+rao_phylo_ml <- res_phylo_ml$abundance$rao # extract
 
-misto12 <- lmer(log_produt ~ fdiv + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto12)  # p-value = 0.991                                
-r.squaredGLMM(misto12) # 0.562682
-AICc(misto12) # -9.353998
+# REGUA
 
-misto13 <- lmer(log_produt ~ cwm_sla + fric_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto13)
-anova(modelo_nulo, misto13) # p-value = 0.1546
-r.squaredGLMM(misto13) # 0.5101121
-AICc(misto13) # -10.33825
+res_phylo_regua <- melodic(
+  samp = comunidade_regua,
+  dis = phylo_dissim_std,
+  type = "abundance"
+)
 
-misto14 <- lmer(log_produt ~ SR + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto14) # p-value = 0.143
-r.squaredGLMM(misto14) # 0.6546653
-AICc(misto14) # -11.37825
+rao_phylo_regua <- res_phylo_regua$abundance$rao
 
-misto15 <- lmer(log_produt ~ SESPD + SR + fric_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto15)
-anova(modelo_nulo, misto15) # p-value = 0.1354
-r.squaredGLMM(misto15) # 0.6546653
-AICc(misto15) # -9.937358
+# BIND
 
-misto15 <- lmer(log_produt ~ PSEab + fric_ldmc + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto15)
-anova(modelo_nulo, misto15) # p-value = 0.1354
-r.squaredGLMM(misto15) # 0.6546653
-AICc(misto15) # -9.937358
-
-misto15 <- lmer(log_produt ~ dcP + (1 | sitemis), data = dadosreg, REML = FALSE)
-summary(misto15)
-anova(modelo_nulo, misto15) # p-value = 0.1779
-r.squaredGLMM(misto15) # 0.6529036
-AICc(misto15) # -11.0603
+melodic_ML$Rao_phylo <- rao_phylo_ml
+melodic_REGUA$Rao_phylo <- rao_phylo_regua
 
 
+library(dplyr)
+
+melodic_all <- bind_rows(melodic_ML, melodic_REGUA)
+
+write.csv(
+  melodic_all,
+  "01 Datasets/02_processed_data/melodic_all_sites.csv",
+  row.names = FALSE
+)
+
+dadosreg <- dadosreg %>%
+  rename(plot = parcela)
+
+dados_final <- left_join(dadosreg, melodic_all, by = "plot")
+
+
+# Save
+
+rownames(dados_final) <- dados_final$plot
+dados_final$plot <- NULL
+
+write.csv(
+  dados_final,
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
+  row.names = TRUE
+)
+
+dadosreg <- read.csv(
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
+  header = TRUE,
+  row.names = 1
+)
+
+head(dadosreg)
+
+all(dadosreg$site.x == dadosreg$site.y)
+
+dadosreg$site <- dadosreg$site.x
+dadosreg$site.x <- NULL
+dadosreg$site.y <- NULL
+
+
+dadosreg <- dadosreg[, c("site", setdiff(names(dadosreg), "site"))]
+
+write.csv(
+  dadosreg,
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
+  row.names = F
+)
