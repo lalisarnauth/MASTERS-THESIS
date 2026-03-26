@@ -333,15 +333,37 @@ labels_pretty <- c(
 variables_x <- c("ppt", "tmax", "tmin", "pet", "vpd", "mcwd", "PC1_clima","altitude", "declividade", "silte", "ph", "valor_s", "valor_t", "PC1nutri", "PC2nutri", "season_temp", "season_ppt", "c.n_soloid","n_trees")
 
 # Create dataframe with X variables
-data_x <- data_filtered %>%
+data_x <- data %>%
   dplyr::select(all_of(variables_x))
+
+# function to calculate p-values
+
+cor_pmat <- function(mat) {
+  n <- ncol(mat)
+  p.mat <- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      test <- cor.test(mat[, i], mat[, j])
+      p.mat[i, j] <- p.mat[j, i] <- test$p.value
+    }
+  }
+  colnames(p.mat) <- colnames(mat)
+  rownames(p.mat) <- colnames(mat)
+  return(p.mat)
+}
 
 # Correlation matrix
 cor_matrix_x <- cor(data_x, use = "complete.obs")
+p_matrix_x   <- cor_pmat(data_x)
 
 # Replace row and column names with pretty labels
 rownames(cor_matrix_x) <- labels_pretty[variables_x]
 colnames(cor_matrix_x) <- labels_pretty[variables_x]
+
+rownames(p_matrix_x) <- labels_pretty[variables_x]
+colnames(p_matrix_x) <- labels_pretty[variables_x]
 
 # Plot
 png("~/01 Masters_LA/06 Figures/01 exploratory_plots/correlation_matrix_environmental_without_CSA.png",
@@ -355,6 +377,23 @@ corrplot(cor_matrix_x,
 
 dev.off()
 
+# plot with asterisks
+
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_env_pvalues.png",
+    width = 1200, height = 800, res = 150)
+
+corrplot(cor_matrix_x,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.8,
+         p.mat = p_matrix_x,
+         sig.level = c(0.001, 0.01, 0.05),
+         insig = "label_sig",   # <-- isso coloca os asteriscos
+         pch.cex = 1.2)
+
+dev.off()
+
 # Diversity metrics #
 
 # Define independent variables
@@ -363,11 +402,13 @@ labels_pretty <- c(
   sespd = "sesPD",
   pse = "PSE",
   pcps1 = "PCPS1",
+  pcps2 = "PCPS2",
+  n_trees = "No. of trees",
   fdis_nfix = "Nfix FDis",
   cwm_nfix = "Nfix CWM"
 )
 
-variables_x <- c("sr", "sespd", "pse", "pcps1", "wd_CWM", "ldmc_CWM", "wd_FDis","ldmc_FDis", "n_trees", "fdis_nfix", "cwm_nfix")
+variables_x <- c("sr", "sespd", "pse", "pcps1","pcps2", "n_trees", "fdis_nfix", "cwm_nfix")
 
 # Create dataframe with X variables
 data_x <- data %>%
@@ -375,10 +416,14 @@ data_x <- data %>%
 
 # Correlation matrix
 cor_matrix_x <- cor(data_x, use = "complete.obs")
+p_matrix_x <- cor_pmat(data_x)
 
 # Replace row and column names with pretty labels
 rownames(cor_matrix_x) <- labels_pretty[variables_x]
 colnames(cor_matrix_x) <- labels_pretty[variables_x]
+
+rownames(p_matrix_x) <- labels_pretty[variables_x]
+colnames(p_matrix_x) <- labels_pretty[variables_x]
 
 # Plot
 png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_diversity_without_CSA.png",
@@ -389,6 +434,23 @@ corrplot(cor_matrix_x,
          type = "upper",
          tl.col = "black",
          tl.cex = 0.8)
+
+dev.off()
+
+# Plot with asterisks
+
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_diversity_pvalues.png",
+    width = 1200, height = 800, res = 150)
+
+corrplot(cor_matrix_x,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.8,
+         p.mat = p_matrix_x,
+         sig.level = c(0.001, 0.01, 0.05),
+         insig = "label_sig",
+         pch.cex = 1.2)
 
 dev.off()
 
@@ -412,10 +474,7 @@ variables_all <- c(
   "n_trees",
   
   # Diversity (taxonomic + phylogenetic)
-  "sr", "sespd", "pse", "pcps1",
-  
-  # Functional traits
-  "wd_CWM", "ldmc_CWM", "wd_FDis", "ldmc_FDis",
+  "sr", "sespd", "pse", "pcps1","pcps2",
   
   # Functional groups
   "fdis_nfix", "cwm_nfix"
@@ -449,11 +508,7 @@ labels_pretty <- c(
   sespd       = "sesPD",
   pse         = "PSE",
   pcps1       = "PCPS1",
-  
-  wd_CWM      = "WD (CWM)",
-  ldmc_CWM    = "LDMC (CWM)",
-  wd_FDis     = "WD (FDis)",
-  ldmc_FDis   = "LDMC (FDis)",
+  pcps2       = "PCPS2",
   
   fdis_nfix   = "Nfix (FDis)",
   cwm_nfix    = "Nfix (CWM)"
@@ -462,12 +517,17 @@ labels_pretty <- c(
 data_all <- data %>%
   dplyr::select(all_of(variables_all))
 
-
 cor_matrix_all <- cor(data_all, use = "complete.obs")
+p_matrix_all   <- cor_pmat(data_all)
 
 # Rename axes
 rownames(cor_matrix_all) <- labels_pretty[variables_all]
 colnames(cor_matrix_all) <- labels_pretty[variables_all]
+
+rownames(p_matrix_all) <- labels_pretty[variables_all]
+colnames(p_matrix_all) <- labels_pretty[variables_all]
+
+# Plot
 
 png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_all_variables.png",
     width = 1400, height = 1000, res = 150)
@@ -481,6 +541,22 @@ corrplot(cor_matrix_all,
 
 dev.off()
 
+# Plot with asterisks
+
+png("~/01 Masters_LA/06 Figures/01 exploratory_plots/corr_matrix_all_pvalue.png",
+    width = 1400, height = 1000, res = 150)
+
+corrplot(cor_matrix_all,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.7,
+         p.mat = p_matrix_all,
+         sig.level = c(0.001, 0.01, 0.05),
+         insig = "label_sig",
+         pch.cex = 1)
+
+dev.off()
 
 # ---- LMMs ----
 

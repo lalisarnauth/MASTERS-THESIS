@@ -33,7 +33,7 @@ crs(rj)
 # lat/long
 rj <- project(rj, "EPSG:4326")
 
-# ---- Raster TerraClimate - PPT ----
+# ---- PPT - Raster TerraClimate ----
 
 files_ppt <- list.files(
   tc_path,
@@ -128,7 +128,7 @@ ggsave(
   dpi = 300
 )
 
-# ---- Raster TerraClimate - TMAX ----
+# ---- TMAX - Raster TerraClimate ----
 
 files_tmax <- list.files(
   tc_path,
@@ -166,7 +166,7 @@ sites_df <- as.data.frame(sites_vect, geom = "XY")
 p_base <- ggplot() +
   geom_spatraster(data = tmax_fine) +
   scale_fill_viridis_c(
-    name = "Mean maximum temperature (°C)",
+    name = "Mean maximum\ntemperature (°C)",
     na.value = "white"
   ) +
   geom_spatvector(data = rj, fill = NA, color = "black", linewidth = 0.5) +
@@ -420,3 +420,101 @@ ggsave(
 )
 
 
+###### Elevation Map ###### 
+
+library(elevatr)
+library(terra)
+library(sf)
+
+# shapefile RJ
+rj <- vect(file.path(map_path, "Estado_RJ_23s.shp"))
+rj <- project(rj, "EPSG:4326")
+rj_sf <- st_as_sf(rj)
+
+# Sites
+
+sites <- read_excel("~/01 Masters_LA/04 Maps/moderadores.xlsx")
+
+sites_clean <- sites %>%
+  filter(!(site %in% c("EEG2", "EEG3", "EEG4", "EEG5")))
+
+sites_vect <- vect(
+  sites_clean,
+  geom = c("Longitude", "Latitude"),
+  crs = "EPSG:4326"
+)
+
+sites_df <- as.data.frame(sites_vect, geom = "XY")
+
+# download DEM
+elev <- get_elev_raster(
+  locations = rj_sf,
+  z = 7,
+  clip = "locations"
+)
+
+elev <- rast(elev)
+
+# cut out RJ
+elev_rj <- crop(elev, rj)
+elev_rj <- mask(elev_rj, rj)
+
+# ---- Plot ----
+
+p_elev <- ggplot() +
+  geom_spatraster(data = elev_rj) +
+  scale_fill_viridis_c(
+    name = "Elevation (m)",
+    na.value = "white"
+  ) +
+  geom_point(
+    data = sites_df,
+    aes(x = x, y = y),
+    shape = 21,
+    fill = "red",
+    color = "black",
+    size = 3,
+    stroke = 0.3
+  ) +
+  coord_sf(expand = FALSE) +
+  annotation_scale(
+    location = "bl",
+    width_hint = 0.25,
+    pad_x = unit(5.8, "cm")
+  ) +
+  annotation_north_arrow(
+    location = "br",
+    which_north = "true",
+    style = north_arrow_minimal(),
+    height = unit(1, "cm"),
+    width = unit(1, "cm")
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    subtitle = "Elevation (SRTM/ASTER-derived DEM)"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    legend.background = element_rect(fill = "white", color = NA),
+    legend.key = element_rect(fill = "white", color = NA),
+    panel.grid = element_blank(),
+    axis.text = element_text(size = 8),
+    legend.title = element_text(size = 10),
+    legend.text = element_text(size = 9),
+    plot.subtitle = element_text(size = 11, hjust = 0)
+  )
+
+p_elev
+
+ggsave(
+  filename = "C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/08 R_map/mapa_elevation_RJ.tiff",
+  plot = p_elev,
+  width = 18,
+  height = 12,
+  units = "cm",
+  dpi = 600,
+  compression = "lzw"
+)
