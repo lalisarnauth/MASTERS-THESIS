@@ -164,8 +164,199 @@ fisherC(sem_H4_pw)
 
 AIC(sem_H4_pw)
 
+# ---- Testing ----
+
+# Packages
+library(piecewiseSEM)
+library(lme4)
+
+# ---- HA ----
+
+# 1. Submodels
+
+mod_n_trees <- glm(n_trees ~ PC1nutri,
+                   data = dadosmisto,
+                   family = poisson)
+
+mod_pcps1 <- lmer(pcps1 ~ PC1_clima + (1 | site),
+                  data = dadosmisto,
+                  REML = FALSE)
+
+mod_biomass <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site),
+                    data = dadosmisto,
+                    REML = FALSE)
+
+# 2. Piecewise SEM
+
+sem_HA <- psem(
+  mod_n_trees,
+  mod_pcps1,
+  mod_biomass
+)
+
+# 3. Summary
+
+summary(sem_HA, conserve = TRUE)
+
+# 4. Standardized coefficients
+
+coefs(sem_HA, standardize = "scale")
+
+# 5. R-squared
+
+rsquared(sem_HA)
+
+# 6. Tests of independence
+
+dSep(sem_HA, conserve = TRUE)
+
+# 7. Global fit
+
+fisherC(sem_HA, conserve = TRUE)
+
+# 8. AIC
+
+AIC(sem_HA)
 
 
+# ---- HB ----
+
+# 1. Submodels
+
+mod_n_trees <- glm(n_trees ~ PC1nutri,
+                   data = dadosmisto,
+                   family = poisson)
+
+mod_biomass <- lmer(log(biomassa_z_kg) ~ PC1nutri + PC1_clima + n_trees + c.n_solo + (1 | site),
+                    data = dadosmisto,
+                    REML = FALSE)
+
+# 2. Piecewise SEM
+
+sem_HB <- psem(
+  mod_n_trees,
+  mod_biomass
+)
+
+# 3. Summary
+
+summary(sem_HB, conserve = TRUE)
+
+# 4. Standardized coefficients
+
+coefs(sem_HB, standardize = "scale")
+
+# 5. R-squared
+
+rsquared(sem_HB)
+
+# 6. Tests of independence
+
+dSep(sem_HB, conserve = TRUE)
+
+# 7. Global fit
+
+fisherC(sem_HB, conserve = TRUE)
+
+# 8. AIC
+
+AIC(sem_HB)
 
 
+# ---- HC ----
+
+# 1. Submodels
+
+mod_n_trees <- glm(n_trees ~ PC1nutri,
+                   data = dadosmisto,
+                   family = poisson)
+
+mod_pse <- lm(pse ~ season_ppt,
+              data = dadosmisto)
+
+mod_biomass <- lmer(log(biomassa_z_kg) ~ pse + n_trees + c.n_solo + (1 | site),
+                    data = dadosmisto,
+                    REML = FALSE)
+
+# 2. Piecewise SEM
+
+sem_HC <- psem(
+  mod_n_trees,
+  mod_pse,
+  mod_biomass
+)
+
+# 3. Summary
+
+summary(sem_HC, conserve = TRUE)
+
+# 4. Standardized coefficients
+
+coefs(sem_HC, standardize = "scale")
+
+# 5. R-squared
+
+rsquared(sem_HC)
+
+# 6. Tests of independence
+
+dSep(sem_HC, conserve = TRUE)
+
+# 7. Global fit
+
+fisherC(sem_HC, conserve = TRUE)
+
+# 8. AIC
+
+AIC(sem_HC)
+
+
+# ---- HD ----
+
+# 1. Submodels
+
+mod_n_trees <- glm(n_trees ~ PC1nutri,
+                   data = dadosmisto,
+                   family = poisson)
+
+mod_sr <- glm(sr ~ altitude,
+                   data = dadosmisto,
+                   family = poisson)
+
+mod_biomass <- lmer(log(biomassa_z_kg) ~ sr + n_trees + altitude + (1 | site),
+                    data = dadosmisto,
+                    REML = FALSE)
+
+# 2. Piecewise SEM
+
+sem_HD <- psem(
+  mod_n_trees,
+  mod_sr,
+  mod_biomass,
+  sr %~~% n_trees
+)
+
+# 3. Summary
+
+summary(sem_HD, conserve = TRUE)
+
+# 4. Standardized coefficients
+
+coefs(sem_HD, standardize = "scale")
+
+# 5. R-squared
+
+rsquared(sem_HD)
+
+# 6. Tests of independence
+
+dSep(sem_HD, conserve = TRUE)
+
+# 7. Global fit
+
+fisherC(sem_HD, conserve = TRUE)
+
+# 8. AIC
+
+AIC(sem_HD)
 
