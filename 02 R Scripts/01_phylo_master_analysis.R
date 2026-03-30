@@ -1166,6 +1166,92 @@ fig_or
 ggsave("~/01 Masters_LA/06 Figures/02 plots/fig_m12_partial_effects_original_EN.png", fig_or, width = 11, height = 6.4, dpi = 300)
 
 
+#### Predicted effects - sites ####
+
+# PCPS1
+
+pred_pcps1 <- ggpredict(msel, terms = c("pcps1", "site"), type = "random")
+
+p_pcps1 <- ggplot(pred_pcps1, aes(x = x, y = predicted, color = group)) +
+  geom_line(linewidth = 1) +
+  labs(
+    x = "PCPS1",
+    y = "Predicted Biomass (kg)",
+    color = "Site"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black")
+  )
+
+# No. of trees
+
+pred_ntrees <- ggpredict(msel, terms = c("n_trees", "site"), type = "random")
+
+p_ntrees <- ggplot(pred_ntrees, aes(x = x, y = predicted, color = group)) +
+  geom_line(linewidth = 1) +
+  labs(
+    x = "Number of trees",
+    y = "Predicted Biomass (kg)",
+    color = "Site"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black")
+  )
+
+# Soil C:N
+pred_cn <- ggpredict(msel, terms = c("c.n_solo", "site"), type = "random")
+
+p_cn <- ggplot(pred_cn, aes(x = x, y = predicted, color = group)) +
+  geom_line(linewidth = 1) +
+  labs(
+    x = "Soil C:N",
+    y = "Predicted Biomass (kg)",
+    color = "Site"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black")
+  )
+
+library(patchwork)
+
+p_ntrees <- p_ntrees +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y  = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+p_cn <- p_cn +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y  = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+final_plot <- (p_pcps1 | p_ntrees | p_cn) +
+  plot_layout(guides = "collect") &
+  theme(
+    legend.position = "top"
+  )
+
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/02 plots/figure_effects.jpeg",
+  plot = final_plot,
+  width = 12,
+  height = 4,
+  units = "in",
+  dpi = 300
+)
+
 # ---- PCPS - without CSA ----
 
 

@@ -462,6 +462,7 @@ mod_full <- lm(
 summary(mod_full)
 vif(mod_full)
 
+
 # Individual Traits
 
 mod_SLA <- lm(log_biomass ~ Rao_SLA, data = dadosreg)
@@ -477,9 +478,7 @@ summary(mod_LDMC_WD)
 # Rao_LDMC      3.1799     1.8142   1.753    0.095 .  
 # Rao_WD       -2.2572     1.4149  -1.595    0.126  
 
-
-
-# ---- Plot ----
+# ---- Pmod_LDMC_WD# ---- Plot ----
 
 # ---- INDIVIDUAL PLOTS ----
 
