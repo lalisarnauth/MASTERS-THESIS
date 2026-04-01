@@ -12,6 +12,7 @@
 # Load all packages
 library(FD)
 library(tidyverse)
+library(corrplot)
 library(MuMIn) #AICc
 library(car)
 library(readxl)
@@ -36,7 +37,7 @@ comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names
 funcional_ml <- read.csv("01 Datasets/01_raw_data/funcional_ml.csv", row.names = 1)
 
 # Select traits
-atributos <- c("WD", "SLA", "LDMC")
+atributos <- c("WD", "SLA", "LDMC","leafC","leafN","leafP")
 
 # === Combined dbFD ===
 resultado_fd_ml <- dbFD(
@@ -92,9 +93,29 @@ for (attr in atributos) {
 }
 
 # === Save archive ===
-saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_MicoLeao.xlsx", overwrite = TRUE)
+saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_ML_Foliar.xlsx", overwrite = TRUE)
 
+# CWM Leaf C:N
 
+comunidade_ml <- read.csv("01 Datasets/01_raw_data/comunidade_ml.csv", row.names = 1, header = TRUE, sep = ";", check.names = FALSE)
+
+funcional_ml <- read.csv("01 Datasets/01_raw_data/funcional_ml.csv", row.names = 1)
+
+atributos <- c("leafCN")
+
+CWM_LeafCN <- dbFD(
+  x = funcional_ml[, atributos, drop = FALSE],
+  a = comunidade_ml,
+  calc.FRic = FALSE,
+  calc.FDiv = FALSE,
+  calc.CWM  = TRUE,
+  stand.x = TRUE,
+  corr = "cailliez"
+)
+
+CWM_LeafCN <- CWM_LeafCN$CWM
+
+write.xlsx(CWM_LeafCN, file = "01 Datasets/03_functional_processed_data/CWM_LeafCN.xlsx")
 
 #### REGUA ####
 
@@ -102,10 +123,10 @@ saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Fun
 comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
 
 funcional_regua <- read.csv("01 Datasets/01_raw_data/funcional_regua.csv", 
-                            row.names = 1, sep = ";")
+                            row.names = 1)
 
 # === Select traits ===
-atributos <- c("WD", "SLA", "LDMC")
+atributos <- c("WD", "SLA", "LDMC","leafC","leafN","leafP")
 
 # === Run combined dbFD ===
 resultado_fd_combinado <- dbFD(
@@ -161,18 +182,34 @@ for (attr in atributos) {
 }
 
 # === Save archive ===
-saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_REGUA.xlsx", overwrite = TRUE)
+saveWorkbook(wb, file = "01 Datasets/03_functional_processed_data/Resultados_Funcional_REGUA_Foliar.xlsx", overwrite = TRUE)
 
+# CWM Leaf C:N
 
+# Read data
+comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
+
+funcional_regua <- read.csv("01 Datasets/01_raw_data/funcional_regua.csv", 
+                            row.names = 1)
+
+atributos <- c("leafCN")
+
+CWM_LeafCN <- dbFD(
+  x = funcional_regua[, atributos, drop = FALSE],
+  a = comunidade_regua,
+  calc.FRic = FALSE,
+  calc.FDiv = FALSE,
+  calc.CWM  = TRUE,
+  stand.x = TRUE,
+  corr = "cailliez"
+)
+
+CWM_LeafCN <- CWM_LeafCN$CWM
+
+write.xlsx(CWM_LeafCN, file = "01 Datasets/03_functional_processed_data/CWM_LeafCN_REGUA.xlsx")
 
 # ---- CORRELATION MATRIX: FUNCTIONAL #####
 ##### INDEPENDENT VARIABLES FROM FILE ####
-
-
-# Load required packages
-library(readxl)
-library(tidyverse)
-library(corrplot)
 
 # Read Excel file
 functional_data <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
@@ -182,12 +219,10 @@ colnames(functional_data)
 
 # Define independent variables')
 
-variables_func <- c("log_biomass","fdis", "fric", "fdiv",
-                    "cwm_wd", "cwm_sla", "cwm_ldmc",
+variables_func <- c("log_biomass","fdis2", "fric2", "fdiv2","raoq",
+                    "cwm_wd", "cwm_sla", "cwm_ldmc","cwm_leafc",                          "cwm_leafn","cwm_leafp","cwm_leafcn","PC1","PC2",
                     "fdis_wd", "fric_wd", "fdis_sla", "fric_sla",
-                    "fdis_ldmc", "fric_ldmc",
-                    "SR", "SESPD", "SESMNTD", "PSC", "PSEab",
-                    "dcF", "dcP")
+                    "fdis_ldmc", "fric_ldmc","fdis_leafc","fric_leafc"                    , "fdis_leafn","fric_leafn","fdis_leafp","Rao_WD","Rao_SLA",                  "Rao_LDMC","Rao_leafC","Rao_leafN","Rao_leafP"                           ,"fric_leafp","SR", "SESPD","SESMNTD", "PSC",                               "PSEab","Rao_phylo","Simpson")
 
 # Create a dataframe with only these variables
 data_func <- functional_data %>%
@@ -196,13 +231,20 @@ data_func <- functional_data %>%
 # Optional: Define pretty labels for plot
 labels_pretty_func <- c(
   log_biomass = "Log Biomass",
-  fdis        = "Functional Dispersion",
-  fric        = "Functional Richness",
-  fdiv        = "Functional Divergence",
+  fdis2       = "Functional Dispersion",
+  fric2       = "Functional Richness",
+  fdiv2       = "Functional Divergence",
+  raoq        = "RaoQ",
   
   cwm_wd      = "CWM Wood Density",
   cwm_sla     = "CWM SLA",
   cwm_ldmc    = "CWM LDMC",
+  cwm_leafc   = "CWM Leaf C",
+  cwm_leafn   = "CWM Leaf N",
+  cwm_leafp   = "CWM Leaf P",
+  cwm_leafcn  = "CWM Leaf C:N",
+  PC1         = "PC1 CWM",
+  PC2         = "PC2 CWM",
   
   fdis_wd     = "FDis Wood Density",
   fric_wd     = "FRic Wood Density",
@@ -210,38 +252,83 @@ labels_pretty_func <- c(
   fric_sla    = "FRic SLA",
   fdis_ldmc   = "FDis LDMC",
   fric_ldmc   = "FRic LDMC",
+  fdis_leafc  = "FDis Leaf C",
+  fric_leafc  = "FRic Leaf C",
+  fdis_leafn  = "FDis Leaf N",
+  fric_leafn  = "FRic Leaf N",
+  fdis_leafp  = "FDis Leaf P",
+  fric_leafp  = "FRic Leaf P",
+  Rao_WD      = "Rao WD",
+  Rao_LDMC    =  "Rao LDMC",
+  Rao_SLA     = "Rao SLA",
+  Rao_leafC   = "Rao Leaf C",
+  Rao_leafN   = "Rao Leaf N",
+  Rao_leafP   = "Rao Leaf P",
+  
   
   SR          = "Species Richness",
+  Simpson     = " Simpson index",
   
   SESPD       = "sesPD",
   SESMNTD     = "sesMNTD",
   PSC         = "PSC",
   PSEab       = "PSE",
-  
-  dcF         = "Decoupled Functional",
-  dcP         = "Decoupled Phylogenetic"
+  Rao_phylo   = "Rao phylogenetic"
 )
 
 # Compute correlation matrix
-cor_matrix_func <- cor(data_func, use = "complete.obs")
-cor_matrix_func <- cor(data_func, method = "spearman", use = "pairwise.complete.obs") # better for n = 23
+cor_matrix_func <- cor(data_func, method = "spearman", use = "pairwise.complete.obs")
 
-# Replace row and column names with pretty labels
-rownames(cor_matrix_func) <- labels_pretty_func[variables_func]
-colnames(cor_matrix_func) <- labels_pretty_func[variables_func]
+# Function for p-values
+cor.mtest <- function(mat, method = "spearman") {
+  mat <- as.matrix(mat)
+  n <- ncol(mat)
+  p.mat <- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      test <- suppressWarnings(
+        cor.test(mat[, i], mat[, j], method = method, exact = FALSE)
+      )
+      p.mat[i, j] <- p.mat[j, i] <- test$p.value
+    }
+  }
+  
+  colnames(p.mat) <- colnames(mat)
+  rownames(p.mat) <- colnames(mat)
+  return(p.mat)
+}
 
-# Plot correlation matrix
-png("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/correlation_matrix_functional.png",
+# p matrix
+p_matrix_func <- cor.mtest(data_func, method = "spearman")
+
+# Pretty names
+pretty_names <- labels_pretty_func[variables_func]
+
+# Rename BOTH matrices
+rownames(cor_matrix_func) <- pretty_names
+colnames(cor_matrix_func) <- pretty_names
+
+rownames(p_matrix_func) <- pretty_names
+colnames(p_matrix_func) <- pretty_names
+
+# Plot
+png("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/correlation_matrix_functional2.png",
     width = 1400, height = 1000, res = 150)
 
 corrplot(cor_matrix_func,
          method = "circle",
          type = "upper",
          tl.col = "black",
-         tl.cex = 0.7)
+         tl.cex = 0.7,
+         p.mat = p_matrix_func,
+         sig.level = c(0.001, 0.01, 0.05),
+         insig = "label_sig",
+         pch.cex = 1.2,
+         pch.col = "black")
 
 dev.off()
-
 
 
 # ---- GLMS ----
@@ -265,6 +352,19 @@ summary(fdiv) # p-value: 0.459
 residuos_fdiv <- residuals(produt.fdiv)
 shapiro.test(residuos_fdiv) #NORMAL
 
+# With foliage results for C and N
+
+fdis <- lm(log_biomass~fdis2,data = dadosreg)
+summary(fdis) # p-value: 0.806         
+
+fric <- lm(log_biomass~fric2,data = dadosreg)
+summary(fric) # p-value: 0.0535 .  
+
+fdiv <- lm(log_biomass~fdiv2,data = dadosreg)
+summary(fdiv) # p-value: 0.722
+
+#
+
 cwm_wd <- lm(log_biomass~cwm_wd,data = dadosreg)
 summary(cwm_wd) # p-value: 0.234 
 residuos_cwm_wd <- residuals(produt.cwm_wd)
@@ -279,6 +379,26 @@ cwm_ldmc <- lm(log_biomass~cwm_ldmc,data = dadosreg)
 summary(cwm_ldmc) # p-value: 0.0595 . 
 residuos_cwm_ldmc <- residuals(produt.cwm_ldmc)
 shapiro.test(residuos_cwm_ldmc) #NORMAL
+
+cwm_leafc <- lm(log_biomass~cwm_leafc,data = dadosreg)
+summary(cwm_leafc) # p-value: 0.0238 *
+residuos_cwm_leafc <- residuals(cwm_leafc)
+shapiro.test(residuos_cwm_leafc) #NORMAL
+
+cwm_leafn <- lm(log_biomass~cwm_leafn,data = dadosreg)
+summary(cwm_leafn) # p-value: 9.251e-05
+residuos_cwm_leafn <- residuals(cwm_leafn)
+shapiro.test(residuos_cwm_leafn) #NORMAL
+
+cwm_leafcn <- lm(log_biomass~cwm_leafcn,data = dadosreg)
+summary(cwm_leafcn) # p-value: 0.01504 *
+residuos_cwm_leafcn <- residuals(cwm_leafcn)
+shapiro.test(residuos_cwm_leafcn) #NORMAL
+
+cwm_leafp <- lm(log_biomass~cwm_leafp,data = dadosreg)
+summary(cwm_leafp) # p-value: 0.0564 .
+residuos_cwm_leafp <- residuals(cwm_leafp)
+shapiro.test(residuos_cwm_leafp) #NORMAL
 
 fdis_wd <- lm(log_biomass~fdis_wd,data = dadosreg)
 summary(fdis_wd) # p-value: 0.8 
@@ -309,6 +429,40 @@ fric_ldmc <- lm(log_biomass~fric_ldmc,data = dadosreg)
 summary(fric_ldmc) # p-value:  0.0399 * 
 residuos_fric_ldmc <- residuals(produt.fric_ldmc)
 shapiro.test(residuos_fric_ldmc) #NORMAL
+
+#
+
+fdis_leafc <- lm(log_biomass~fdis_leafc,data = dadosreg)
+summary(fdis_leafc) # p-value: 0.138
+residuos_fdis_leafc <- residuals(fdis_leafc)
+shapiro.test(residuos_fdis_leafc) #NORMAL
+
+fric_leafc <- lm(log_biomass~fric_leafc,data = dadosreg)
+summary(fric_leafc) # p-value:  0.149
+residuos_fric_leafc <- residuals(fric_leafc)
+shapiro.test(residuos_fric_leafc) #NORMAL
+
+fdis_leafn <- lm(log_biomass~fdis_leafn,data = dadosreg)
+summary(fdis_leafn) # p-value: 0.206
+residuos_fdis_leafc <- residuals(fdis_leafn)
+shapiro.test(residuos_fdis_leafn) #NORMAL
+
+fric_leafn <- lm(log_biomass~fric_leafn,data = dadosreg)
+summary(fric_leafn) # p-value:  0.852
+residuos_fric_leafn <- residuals(fric_leafn)
+shapiro.test(residuos_fric_leafn) #NORMAL
+
+fdis_leafp <- lm(log_biomass~fdis_leafp,data = dadosreg)
+summary(fdis_leafp) # p-value: 0.77
+residuos_fdis_leafp <- residuals(fdis_leafp)
+shapiro.test(residuos_fdis_leafp) #NORMAL
+
+fric_leafp <- lm(log_biomass~fric_leafp,data = dadosreg)
+summary(fric_leafp) # p-value:  0.6703
+residuos_fric_leafp <- residuals(fric_leafp)
+shapiro.test(residuos_fric_leafp) #NORMAL
+
+#
 
 fdis_cwm_wd <- lm(fdis_wd~cwm_wd,data = dadosreg)
 summary(fdis_cwm_wd) # p-value: 0.05865 .
@@ -398,6 +552,17 @@ summary(ntrees) # p= 0.933
 ntrees <- lm(cwm_ldmc~n_trees, data = dadosreg)
 summary(ntrees) # p= 0.933
 
+
+# PCA Scores
+m_pca <- lm(log_biomass~ PC1 + PC2 + fric2, data = dadosreg)
+summary(m_pca) # p= 0.02186
+car::vif(m_pca)
+
+
+m1 <- lm(log_biomass~cwm_leafn + fric2, data = dadosreg)
+summary(m1) # p= 0.0176
+
+
 ## Candidate models
 
 # Functional (dispersion)
@@ -446,7 +611,7 @@ cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))
 
 # All traits
 
-mod_func <- lm(log_biomass ~ Rao_func, data = dadosreg)
+mod_func <- lm(log_biomass ~ raoq, data = dadosreg)
 mod_phylo <- lm(log_biomass ~ Rao_phylo, data = dadosreg)
 mod_tax <- lm(log_biomass ~ Simpson, data = dadosreg)
 
@@ -455,12 +620,12 @@ summary(mod_phylo)
 summary(mod_tax)
 
 mod_full <- lm(
-  log_biomass ~ Rao_func + Rao_phylo + Simpson,
+  log_biomass ~ raoq + Rao_phylo + Simpson,
   data = dadosreg
 )
 
 summary(mod_full)
-vif(mod_full)
+car::vif(mod_full)
 
 
 # Individual Traits
@@ -468,20 +633,347 @@ vif(mod_full)
 mod_SLA <- lm(log_biomass ~ Rao_SLA, data = dadosreg)
 mod_LDMC <- lm(log_biomass ~ Rao_LDMC, data = dadosreg)
 mod_WD <- lm(log_biomass ~ Rao_WD, data = dadosreg)
+mod_leafc <- lm(log_biomass ~ Rao_leafC, data = dadosreg)
+mod_leafn <- lm(log_biomass ~ Rao_leafN, data = dadosreg)
+mod_leafp <- lm(log_biomass ~ Rao_leafP, data = dadosreg)
 
-summary(mod_SLA) # 0.464
-summary(mod_LDMC) # 0.304 
-summary(mod_WD) # 0.445    
+summary(mod_SLA) # 0.417    
+summary(mod_LDMC) # 0.0283 * 
+summary(mod_WD) # 0.521
+summary(mod_leafc) # 0.924
+summary(mod_leafn) # 0.752 
+summary(mod_leafp) # 0.985
+
 
 mod_LDMC_WD <- lm(log_biomass ~ Rao_LDMC + Rao_WD, data = dadosreg)
 summary(mod_LDMC_WD)
-# Rao_LDMC      3.1799     1.8142   1.753    0.095 .  
-# Rao_WD       -2.2572     1.4149  -1.595    0.126  
+# Rao_LDMC      4.5276     1.1447   3.955 0.000781 ***
+# Rao_WD       -3.4349     1.1598  -2.962 0.007712 ** 
 
-# ---- Pmod_LDMC_WD# ---- Plot ----
+# ---- Dredge ----
+
+library(MuMIn)
+
+# H1: Diversity
+
+options(na.action = "na.fail")
+
+global_H1 <- lm(
+  log_biomass ~ 
+    fdis2 + fric2 + fdiv2 +
+    raoq + Rao_phylo +
+    fdis_wd + fdis_sla + fric_sla +
+    fdis_ldmc + fric_ldmc +
+    fdis_leafc + fric_leafc +
+    fdis_leafn + fric_leafn +
+    fdis_leafp + fric_leafp +
+    Simpson,
+  data = dadosreg,
+  na.action = na.fail
+)
+
+dd_H1  <- dredge(
+  global_H1,
+  subset =
+    # global FD metrics
+    !(fdis2 && fric2) &
+    !(fdis2 && fdiv2) &
+    !(fric2 && fdiv2) &
+    
+    # RaoQ vs. global FD metrics
+    !(raoq && fdis2) &
+    !(raoq && fric2) &
+    !(raoq && fdiv2) &
+    
+    # global metrics vs. metrics per trait of the same family
+    !(fdis2 && fdis_wd) &
+    !(fdis2 && fdis_sla) &
+    !(fdis2 && fdis_ldmc) &
+    !(fdis2 && fdis_leafc) &
+    !(fdis2 && fdis_leafn) &
+    !(fdis2 && fdis_leafp) &
+    
+    !(fric2 && fric_sla) &
+    !(fric2 && fric_ldmc) &
+    !(fric2 && fric_leafc) &
+    !(fric2 && fric_leafn) &
+    !(fric2 && fric_leafp) &
+    
+    # strong redundancies between traits
+    !(fdis_leafc && fdis_leafn) &
+    !(fric_leafc && fric_leafn) &
+    !(fdis_ldmc && fdis_sla) &
+    !(fric_ldmc && fric_sla)
+)
+
+# H2 - Identity
+
+options(na.action = "na.fail")
+
+global_H2 <- lm(
+  log_biomass ~ 
+    cwm_sla + cwm_ldmc + cwm_wd + cwm_leafc +
+    cwm_leafn + cwm_leafp + cwm_leafcn +
+    PC1 + PC2 +
+    SESPD + SESMNTD + PSC + PSEab,
+  data = dadosreg,
+  na.action = na.fail
+)
+
+dd_H2 <- dredge(
+  global_H2,
+  subset =
+    # CWM foliar strongly correlated
+    !(cwm_leafc && cwm_leafn) &
+    !(cwm_leafc && cwm_leafp) &
+    !(cwm_leafc && cwm_leafcn) &
+    !(cwm_leafn && cwm_leafp) &
+    !(cwm_leafn && cwm_leafcn) &
+    !(cwm_leafp && cwm_leafcn) &
+    
+    # foliar economic spectrum
+    !(cwm_sla && cwm_ldmc) &
+    
+    # PCs do not include the original variables that compose them.
+    !(PC1 && cwm_sla) &
+    !(PC1 && cwm_ldmc) &
+    !(PC1 && cwm_wd) &
+    !(PC1 && cwm_leafc) &
+    !(PC1 && cwm_leafn) &
+    !(PC1 && cwm_leafp) &
+    !(PC1 && cwm_leafcn) &
+    
+    !(PC2 && cwm_sla) &
+    !(PC2 && cwm_ldmc) &
+    !(PC2 && cwm_wd) &
+    !(PC2 && cwm_leafc) &
+    !(PC2 && cwm_leafn) &
+    !(PC2 && cwm_leafp) &
+    !(PC2 && cwm_leafcn) &
+    
+    # correlated phylogenetic metrics
+    !(SESPD && SESMNTD) &
+    !(SESPD && PSC) &
+    !(SESPD && PSEab) &
+    !(SESMNTD && PSC) &
+    !(SESMNTD && PSEab) &
+    !(PSC && PSEab)
+)
+
+# Model average
+
+model.avg(dd_H1, subset = delta < 2,rank = "AICc")
+sw(dd_H1)
+
+model.avg(dd_H2, subset = delta < 2,rank = "AICc")
+sw(dd_H2)
+
+# H3 - Diversity and Identity
+
+global_H3 <- lm(
+  log_biomass ~ 
+    # Identity (dominant)
+    PC1 + PC2 +
+    
+    # Functional Diversity - LDMC
+    Rao_LDMC +
+    
+    # Functional Diversity all
+    raoq +
+    
+    # Phylogeny
+    Rao_phylo +
+    
+    # taxonomic
+    Simpson,
+  data = dadosreg,
+  na.action = na.fail
+)
+
+dd_H3 <- dredge(
+  global_H3)
+
+model.avg(dd_H3, subset = delta < 2,rank = "AICc")
+sw(dd_H3)
+head(dd_H3, 1)
+
+# Best H3 model:
+
+mh3 <- lm(log_biomass~ Rao_LDMC + PC1 + PC2, data = dadosreg)
+summary(MH3) # p= 0.0176
+vif(MH3)
+
+# ---- Diversity or identity? ----
+
+# Diversity
+
+mdiv1 <- lm(log_biomass~ Rao_LDMC+Rao_WD, data = dadosreg)
+summary(mdiv1) # R2 = 0.39
+
+mdiv2 <- lm(log_biomass~ raoq, data = dadosreg)
+summary(mdiv2) # R2 = -0.02712
+
+mdiv3 <- lm(log_biomass~ Rao_phylo, data = dadosreg)
+summary(mdiv3) # R2 = 0.05
+
+# Identity
+
+mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
+summary(mid1) # R2 = 0.50
+
+mid2 <- lm(log_biomass ~ PC1, data = dadosreg)
+summary(mid2) # R2 =  0.19
+
+# Diversity and identity?
+
+mdiv.id <- lm(log_biomass~ Rao_LDMC + cwm_leafn, data = dadosreg)
+summary(mdiv.id) # R2 = 0.59
+vif(mdiv.id)
+
+# ---- Model selection table ----
+
+library(MuMIn)
+library(dplyr)
+library(purrr)
+library(tibble)
+library(flextable)
+library(officer)
+
+# Extract predictors from model
+get_predictors_pretty <- function(model) {
+  terms_vec <- attr(terms(model), "term.labels")
+  
+  pretty_names <- c(
+    cwm_leafn = "CWM leaf N",
+    cwm_wd = "CWM wood density",
+    cwm_ldmc = "CWM LDMC",
+    cwm_sla = "CWM SLA",
+    cwm_leafc = "CWM leaf C",
+    cwm_leafp = "CWM leaf P",
+    cwm_leafcn = "CWM leaf C:N",
+    raoq = "RaoQ",
+    Rao_phylo = "Phylogenetic Rao",
+    Simpson = "Simpson",
+    fdis_ldmc = "FDis LDMC",
+    fdis_wd = "FDis wood density",
+    fdis_sla = "FDis SLA",
+    fdis_leafc = "FDis leaf C",
+    fdis_leafn = "FDis leaf N",
+    fdis_leafp = "FDis leaf P",
+    fric2 = "FRic",
+    fdis2 = "FDis",
+    fdiv2 = "FDiv",
+    fric_leafp = "FRic leaf P",
+    fric_leafn = "FRic leaf N",
+    fric_leafc = "FRic leaf C",
+    fric_ldmc = "FRic LDMC",
+    fric_sla = "FRic SLA",
+    SESPD = "sesPD",
+    SESMNTD = "sesMNTD",
+    PSC = "PSC",
+    PSEab = "PSE",
+    PC1 = "PC1 CWM",
+    PC2 = "PC2 CWM"
+  )
+  
+  terms_vec <- ifelse(terms_vec %in% names(pretty_names),
+                      pretty_names[terms_vec],
+                      terms_vec)
+  
+  paste(terms_vec, collapse = " + ")
+}
+
+# Function to create hypothesis table
+
+make_top_models_table <- function(dd, hypothesis_name, n_top = 2) {
+  
+  # pega os melhores modelos
+  mods <- get.models(dd, 1:n_top)
+  
+  # extrai tabela do dredge
+  dd_top <- as.data.frame(dd) %>%
+    slice(1:n_top)
+  
+  # monta tabela final
+  out <- tibble(
+    Hypothesis = hypothesis_name,
+    Predictors = map_chr(mods, get_predictors_pretty),
+    K = dd_top$df,
+    logLik = round(dd_top$logLik, 3),
+    AICc = round(dd_top$AICc, 3),
+    `ΔAICc` = round(dd_top$delta, 3),
+    Weight = round(dd_top$weight, 3)
+  )
+  
+  return(out)
+}
+
+
+# Create a table for each hypothesis
+
+tab_H1 <- make_top_models_table(dd_H1, "Diversity hypothesis", n_top = 2)
+tab_H2 <- make_top_models_table(dd_H2, "Identity hypothesis", n_top = 2)
+tab_H3 <- make_top_models_table(dd_H3, "Diversity + identity hypothesis", n_top = 2)
+
+# Bind
+
+tab_final_models <- bind_rows(tab_H1, tab_H2, tab_H3)
+
+tab_final_models
+
+ft_models <- flextable(tab_final_models) %>%
+  autofit()
+
+ft_models
+
+# Export to word
+
+doc <- read_docx() %>%
+  body_add_par("Table X. Top-ranked models for each hypothesis.", style = "heading 1") %>%
+  body_add_flextable(ft_models)
+
+print(doc, target = "C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/top_models_hypotheses.docx")
+
+# ---- Best model Table ----
+
+best_H3 <- get.models(dd_H3, 1)[[1]]
+summary(best_H3)
+
+library(broom)
+library(dplyr)
+library(flextable)
+
+tab_H3 <- tidy(best_H3) %>%
+  mutate(
+    term = dplyr::recode(term,
+                         "(Intercept)" = "Intercept",
+                         "cwm_leafn"   = "CWM leaf N",
+                         "raoq"        = "RaoQ",
+                         "Simpson"     = "Simpson"
+    ),
+    across(where(is.numeric), ~ round(.x, 3))
+  ) %>%
+  select(
+    Predictor = term,
+    Estimate = estimate,
+    `SE` = std.error,
+    `t` = statistic,
+    `p` = p.value
+  )
+
+ft_H3 <- flextable(tab_H3)
+ft_H3
+
+library(officer)
+
+doc <- read_docx() %>%
+  body_add_par("Table X. Final model for H3.", style = "heading 1") %>%
+  body_add_flextable(ft_H3)
+
+print(doc, target = "C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/H3_table.docx")
+
 
 # ---- INDIVIDUAL PLOTS ----
-
 
 # Fit the model
 fit <- lm(log_biomass ~ fric_ldmc, data = dadosreg)
@@ -630,6 +1122,116 @@ g <- dadosreg %>%
 
 g
 
+## CWM Leaf C ##
+
+# Fit the model
+fit <- lm(log_biomass ~ cwm_leafc, data = dadosreg)
+summary(fit)
+
+# Extract R² e p-value
+r2 <- summary(fit)$r.squared
+p  <- coef(summary(fit))["cwm_leafc", "Pr(>|t|)"]
+
+# Text
+subtxt <- sprintf("R² = %.2f\np = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+# plot
+g <- dadosreg %>%
+  ggplot(aes(cwm_leafc, log_biomass)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = TRUE, colour = "green") +
+  labs(
+    x = "CWM Leaf C content (%)",
+    y = expression("log Biomass (g m"^-2*" year"^-1*")")) +
+  annotate("text", 
+           x = max(dadosreg$cwm_leafc, na.rm = TRUE), 
+           y = max(dadosreg$log_biomass, na.rm = TRUE), 
+           label = subtxt, 
+           hjust = 1, vjust = 1,
+           size = 3.5) +
+  theme_minimal(base_size = 11)
+
+g
+
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/CWM_LeafC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+
+## CWM Leaf N ##
+
+# Fit the model
+fit <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
+summary(fit)
+
+# Extract R² e p-value
+r2 <- summary(fit)$r.squared
+p  <- coef(summary(fit))["cwm_leafn", "Pr(>|t|)"]
+
+# Text
+subtxt <- sprintf("R² = %.2f\np = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+# plot
+g <- dadosreg %>%
+  ggplot(aes(cwm_leafn, log_biomass)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = TRUE, colour = "red") +
+  labs(
+    x = "CWM Leaf N content (%)",
+    y = expression("log Biomass")) +
+  annotate("text", 
+           x = max(dadosreg$cwm_leafn, na.rm = TRUE), 
+           y = max(dadosreg$log_biomass, na.rm = TRUE), 
+           label = subtxt, 
+           hjust = 1, vjust = 1,
+           size = 3.5) +
+  theme_minimal(base_size = 11)
+
+g
+
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/CWM_LeafN.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+
+
+## Rao LDMC ##
+
+# Fit the model
+fit <- lm(log_biomass ~ Rao_LDMC, data = dadosreg)
+summary(fit)
+
+# Extract R² e p-value
+r2 <- summary(fit)$r.squared
+p  <- coef(summary(fit))["Rao_LDMC", "Pr(>|t|)"]
+
+# Text
+subtxt <- sprintf("R² = %.2f\np = %s",
+                  r2,
+                  ifelse(p < 0.001, "<0.001", sprintf("%.3f", p)))
+
+# plot
+g <- dadosreg %>%
+  ggplot(aes(Rao_LDMC, log_biomass)) +
+  geom_point(size = 3, alpha = 0.5) + 
+  geom_smooth(method = "lm", se = TRUE, colour = "blue") +
+  labs(
+    x = "RaoQ LDMC",
+    y = expression("log Biomass (g)")) +
+  annotate("text", 
+           x = max(dadosreg$Rao_LDMC*0.5, na.rm = TRUE), 
+           y = max(dadosreg$log_biomass, na.rm = TRUE), 
+           label = subtxt, 
+           hjust = 1, vjust = 1,
+           size = 3.5) +
+  theme_minimal(base_size = 11)
+
+g
+
+# Save
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Rao_LDMC.jpeg", g, width = 15, height = 10, units = "cm", dpi = 600)
+
+
 
 
 ## sesMNTD
@@ -690,118 +1292,56 @@ ggplot(dadosreg, aes(x = RaoQ_LDMC, y = log_produt, color = sitemis)) +
   theme_classic() +
   labs(x = "FDis LDMC", y = "Log(Biomass/age)", color = "Site")
 
-####### Effect plots for each variable #######
+####### Partial Effects Div + Id model #######
 
-# Diversity model
+library(ggeffects)
+library(ggplot2)
+library(patchwork)
 
-# Partial predictions controlling for the other predictor
-eff_ldmc <- ggpredict(m1, terms = "fdis_ldmc")
-eff_wd   <- ggpredict(m1, terms = "fdis_wd")
+# gerar predições
+pred_ldmc  <- ggpredict(mdiv.id, terms = "Rao_LDMC")
+pred_leafn <- ggpredict(mdiv.id, terms = "cwm_leafn")
 
-# Plot LDMC dispersion
+plot_partial <- function(pred, data, var, xlab) {
+  
+  ggplot() +
+    # intervalo de confiança
+    geom_ribbon(data = pred,
+                aes(x = x, ymin = conf.low, ymax = conf.high),
+                alpha = 0.2) +
+    
+    # linha do modelo
+    geom_line(data = pred,
+              aes(x = x, y = predicted),
+              linewidth = 1) +
+    
+    # pontos observados
+    geom_point(data = data,
+               aes_string(x = var, y = "log_biomass"),
+               alpha = 0.6) +
+    
+    labs(
+      x = xlab,
+      y = "Log biomass"
+    ) +
+    
+    theme_minimal() +
+    theme(
+      panel.grid = element_blank(),
+      axis.line = element_line(color = "black"),
+      axis.ticks = element_line(color = "black"),
+      axis.text = element_text(size = 11),
+      axis.title = element_text(size = 12)
+    )
+}
 
-p1 <- ggplot() +
-  geom_point(data = dadosreg,
-             aes(x = fdis_ldmc, y = log_biomass),
-             alpha = 0.6) +
-  geom_line(data = eff_ldmc,
-            aes(x = x, y = predicted),
-            linewidth = 1) +
-  geom_ribbon(data = eff_ldmc,
-              aes(x = x, ymin = conf.low, ymax = conf.high),
-              alpha = 0.2) +
-  labs(
-    x = "FDis LDMC",
-    y = "log(Biomass)",
-    title = "(a)"
-  ) +
-  theme_classic()
+p1 <- plot_partial(pred_ldmc, dadosreg, "Rao_LDMC", "Rao (LDMC)")
+p2 <- plot_partial(pred_leafn, dadosreg, "cwm_leafn", "CWM leaf N")
 
-# Plot WD dispersion
-p2 <- ggplot() +
-  geom_point(data = dadosreg,
-             aes(x = fdis_wd, y = log_biomass),
-             alpha = 0.6) +
-  geom_line(data = eff_wd,
-            aes(x = x, y = predicted),
-            linewidth = 1) +
-  geom_ribbon(data = eff_wd,
-              aes(x = x, ymin = conf.low, ymax = conf.high),
-              alpha = 0.2) +
-  labs(
-    x = "FDis Wood Density",
-    y = "log(Biomass)",
-    title = "(b)"
-  ) +
-  theme_classic()
+fig <- p1 + p2 + plot_layout(ncol = 3)
 
-# Combine
-final_plot <- p1 + p2
+fig
 
-ggsave(filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Effect_FDis_LDMC_WD.jpeg",
-  plot = final_plot,
-  width = 8,
-  height = 4,
-  units = "in",
-  dpi = 300)
-
-# Identity model
-
-# Modelo CWM (identity)
-m2 <- lm(log_biomass ~ cwm_ldmc + cwm_wd, data = dadosreg)
-
-# Partial predictions controlling for the other predictor
-eff_cwm_ldmc <- ggpredict(m2, terms = "cwm_ldmc")
-eff_cwm_wd   <- ggpredict(m2, terms = "cwm_wd")
-
-# Plot CWM LDMC
-p1_cwm <- ggplot() +
-  geom_point(data = dadosreg,
-             aes(x = cwm_ldmc, y = log_biomass),
-             alpha = 0.6) +
-  geom_line(data = eff_cwm_ldmc,
-            aes(x = x, y = predicted),
-            linewidth = 1) +
-  geom_ribbon(data = eff_cwm_ldmc,
-              aes(x = x, ymin = conf.low, ymax = conf.high),
-              alpha = 0.2) +
-  labs(
-    x = "CWM LDMC",
-    y = "log(Biomass)",
-    title = "(a)"
-  ) +
-  theme_classic()
-
-# Plot CWM Wood Density
-p2_cwm <- ggplot() +
-  geom_point(data = dadosreg,
-             aes(x = cwm_wd, y = log_biomass),
-             alpha = 0.6) +
-  geom_line(data = eff_cwm_wd,
-            aes(x = x, y = predicted),
-            linewidth = 1) +
-  geom_ribbon(data = eff_cwm_wd,
-              aes(x = x, ymin = conf.low, ymax = conf.high),
-              alpha = 0.2) +
-  labs(
-    x = "CWM WD",
-    y = "log(Biomass)",
-    title = "(b)"
-  ) +
-  theme_classic()
-
-# Combine
-final_plot_cwm <- p1_cwm + p2_cwm
-
-# Save
-ggsave(
-  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Effect_CWM_LDMC_WD.jpeg",
-  plot = final_plot_cwm,
-  width = 8,
-  height = 4,
-  units = "in",
-  dpi = 300
-)
 
 # ---- 3D PLOT ----
 
@@ -1039,6 +1579,8 @@ ggsave(
 
 library("V.PhyloMaker2")
 library(writexl)
+library(ape)
+library(picante)
 
 # input the sample species list
 example <- read.csv("01 Datasets/01_raw_data/filogenia_ml_regua.csv")
@@ -1048,16 +1590,54 @@ tree <- phylo.maker(example, tree = GBOTB.extended.TPL,output.sp.list = TRUE,nod
 tree_ok <- tree$scenario.3
 summary(tree_ok)
 
-dados <- read.csv("01 Datasets/01_raw_data/funcional_ml_regua.csv", row.names = 1,header = T, sep = ";")
+dados <- read.csv("01 Datasets/01_raw_data/funcional_ml_regua_2.csv", row.names = 1,header = T)
 
-library(ape)
+rownames(dados) <- gsub(" ", "_", rownames(dados))
+
+intersect(rownames(dados), tree_teste$tip.label)
+length(intersect(rownames(dados), tree_teste$tip.label))
 
 tree_teste <- multi2di(tree_ok)
 
-library(picante)
+resultado <- multiPhylosignal(dados[, c("WD", "SLA", "LDMC","leafC","leafN", "leafP")], tree_teste)
+# LDMC - Strong signal
+# LeafC - moderate phylogenetic signal
+# LeafN marginal
 
-resultado <- multiPhylosignal(dados[, c("WD", "SLA", "LDMC")], tree_teste)
-# LDMC - SINAL FORTE
+# Fabaceae has more leafN than others?
+
+phylo <- read.csv("01 Datasets/01_raw_data/filogenia_ml_regua.csv")
+
+# padronizar nomes no phylo
+phylo2 <- phylo %>%
+  mutate(species = gsub(" ", "_", species))
+
+dados2 <- dados2 %>%
+  left_join(phylo2[, c("species", "family")], by = "species")
+
+# criar variável Fabaceae vs Other
+dados2 <- dados2 %>%
+  mutate(
+    grupo = ifelse(family == "Fabaceae", "Fabaceae", "Other families")
+  )
+
+ggplot(dados2, aes(x = grupo, y = leafN, fill = grupo)) +
+  geom_boxplot(alpha = 0.6, width = 0.6, outlier.shape = NA) +
+  geom_jitter(width = 0.1, alpha = 0.6) +
+  scale_fill_manual(values = c("#2c7fb8", "#f03b20")) +
+  labs(
+    x = "",
+    y = "Leaf N",
+    title = "Leaf nitrogen in Fabaceae vs other families"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    legend.position = "none",
+    axis.line = element_line(color = "black")
+  )
+
+wilcox.test(leafN ~ grupo, data = dados2) # 0.2
 
 
 # ---- DECOUPLED EFFECTS ----
@@ -1123,431 +1703,181 @@ r.squaredGLMM(modelo_dcP)
 AICc(modelo_dcF)
 AICc(modelo_dcP)
 
-# ---- RaoQ ----
-
-library(tidyverse)
-library(cluster)   # daisy() - Gower distance
-library(openxlsx)
-
-#### RaoQ ML ####
-
-
-# Read data
-comunidade_ml <- read.csv(
-  "01 Datasets/01_raw_data/comunidade_ml.csv",
-  row.names = 1, sep = ";", check.names = FALSE
-)
-
-funcional_ml <- read.csv(
-  "01 Datasets/01_raw_data/funcional_ml.csv",
-  row.names = 1, sep = ";"
-)
-
-# Select traits
-atributos <- c("WD", "SLA", "LDMC")
-traits_ml <- funcional_ml[, atributos]
-
-# Keep only common species
-spp_ml <- intersect(colnames(comunidade_ml), rownames(traits_ml))
-com_ml <- comunidade_ml[, spp_ml]
-traits_ml <- traits_ml[spp_ml, ]
-
-# Standardize traits
-traits_ml <- scale(traits_ml)
-
-# Relative abundance
-relab_ml <- com_ml / rowSums(com_ml)
-
-# --- RaoQ COMBINED ---
-dist_ml <- as.matrix(daisy(traits_ml, metric = "gower"))
-
-raoq_ml <- apply(relab_ml, 1, function(p) {
-  as.numeric(t(p) %*% dist_ml %*% p)
-})
-
-raoq_ml_df <- data.frame(
-  site = names(raoq_ml),
-  raoq = as.numeric(raoq_ml))
-
-
-# --- RaoQ BY TRAIT ---
-raoq_ml_traits <- data.frame(Plot = rownames(com_ml))
-
-for (tr in atributos) {
-  
-  tr_mat <- scale(traits_ml[, tr, drop = FALSE])
-  d_tr <- as.matrix(daisy(tr_mat, metric = "gower"))
-  
-  rao_tr <- apply(relab_ml, 1, function(p) {
-    as.numeric(t(p) %*% d_tr %*% p)
-  })
-  
-  raoq_ml_traits[[paste0("RaoQ_", tr)]] <- rao_tr
-}
-
-raoq_ml_traits_df <- raoq_ml_traits %>%
-  rename(site = Plot)
-
-
-# --- Save Excel ---
-wb_ml <- createWorkbook()
-
-addWorksheet(wb_ml, "RaoQ_Combinado")
-writeData(wb_ml, "RaoQ_Combinado",
-          data.frame(Plot = names(raoq_ml), RaoQ = raoq_ml))
-
-addWorksheet(wb_ml, "RaoQ_por_trait")
-writeData(wb_ml, "RaoQ_por_trait", raoq_ml_traits)
-
-saveWorkbook(
-  wb_ml,
-  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/Resultados_RaoQ_ML.xlsx",
-  overwrite = TRUE
-)
-
-#### RaoQ REGUA ####
-
-# Read data
-comunidade_regua <- read.csv(
-  "01 Datasets/01_raw_data/comunidade_regua.csv",
-  row.names = 1, sep = ";", check.names = FALSE
-)
-
-funcional_regua <- read.csv(
-  "01 Datasets/01_raw_data/funcional_regua.csv",
-  row.names = 1, sep = ";"
-)
-
-# Select traits
-atributos <- c("WD", "SLA", "LDMC")
-traits_rg <- funcional_regua[, atributos]
-
-# Keep only common species
-spp_rg <- intersect(colnames(comunidade_regua), rownames(traits_rg))
-com_rg <- comunidade_regua[, spp_rg]
-traits_rg <- traits_rg[spp_rg, ]
-
-# Standardize traits
-traits_rg <- scale(traits_rg)
-
-# Relative abundance
-relab_rg <- com_rg / rowSums(com_rg)
-
-# --- RaoQ COMBINED ---
-dist_rg <- as.matrix(daisy(traits_rg, metric = "gower"))
-
-raoq_rg <- apply(relab_rg, 1, function(p) {
-  as.numeric(t(p) %*% dist_rg %*% p)
-})
-
-raoq_rg_df <- data.frame(
-  site = names(raoq_rg),
-  raoq = as.numeric(raoq_rg))
-
-
-# --- RaoQ BY TRAIT ---
-raoq_rg_traits <- data.frame(Plot = rownames(com_rg))
-
-for (tr in atributos) {
-  
-  tr_mat <- scale(traits_rg[, tr, drop = FALSE])
-  d_tr <- as.matrix(daisy(tr_mat, metric = "gower"))
-  
-  rao_tr <- apply(relab_rg, 1, function(p) {
-    as.numeric(t(p) %*% d_tr %*% p)
-  })
-  
-  raoq_rg_traits[[paste0("RaoQ_", tr)]] <- rao_tr
-}
-
-raoq_rg_traits_df <- raoq_rg_traits %>%
-  rename(site = Plot)
-
-
-# --- Save Excel ---
-wb_rg <- createWorkbook()
-
-addWorksheet(wb_rg, "RaoQ_Combinado")
-writeData(wb_rg, "RaoQ_Combinado",
-          data.frame(Plot = names(raoq_rg), RaoQ = raoq_rg))
-
-addWorksheet(wb_rg, "RaoQ_por_trait")
-writeData(wb_rg, "RaoQ_por_trait", raoq_rg_traits)
-
-saveWorkbook(
-  wb_rg,
-  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/Resultados_RaoQ_REGUA.xlsx",
-  overwrite = TRUE
-)
-
-## Bind ML + REGUA ##
-
-raoq_all <- bind_rows(raoq_ml_df, raoq_rg_df)
-raoq_traits_all <- bind_rows(raoq_ml_traits_df, raoq_rg_traits_df)
-
-dadosreg <- dadosreg %>%
-  left_join(raoq_all %>% select(site, raoq), by = "site")
-
-dadosreg <- dadosreg %>%
-  left_join(
-    raoq_traits_all %>% select(site, starts_with("RaoQ_")),
-    by = "site"
-  )
-
-write.csv(dadosreg,file="~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv")
-
-
-
 # ---- Melodic function ----
 
-melodic <- function(samp, dis, type = "both"){
-  if(!is.matrix(samp)){samp <- as.matrix(samp)}
-  if(!is.matrix(dis)){dis <- as.matrix(dis)}
+melodic <- function(samp, dis, type = "both") {
+  if (!is.matrix(samp)) samp <- as.matrix(samp)
+  if (!is.matrix(dis))  dis  <- as.matrix(dis)
   
-  if(is.null(colnames(samp)) | is.null(colnames(dis))){
-    stop("Both samp and dis must have colnames.\n")
+  if (is.null(colnames(samp)) || is.null(colnames(dis))) {
+    stop("Both samp and dis must have column names.")
   }
   
-  N <- dim(samp)[1]
-  melodic <- list()
+  N <- nrow(samp)
+  out <- list()
   
-  if(type == "both"){
-    melodic$abundance <- list()
-    melodic$abundance$mpd <- melodic$abundance$rao <- melodic$abundance$simpson <- numeric(N)
-    melodic$presence <- list()
-    melodic$presence$mpd <- melodic$presence$rao <- melodic$presence$simpson <- numeric(N)
+  if (type %in% c("both", "abundance")) {
+    out$abundance <- list(
+      mpd = numeric(N),
+      rao = numeric(N),
+      simpson = numeric(N)
+    )
   }
   
-  if(type == "abundance"){ 
-    melodic$abundance <- list()
-    melodic$abundance$mpd <- melodic$abundance$rao <- melodic$abundance$simpson <- numeric(N)
+  if (type %in% c("both", "presence")) {
+    out$presence <- list(
+      mpd = numeric(N),
+      rao = numeric(N),
+      simpson = numeric(N)
+    )
   }
   
-  if(type == "presence"){ 
-    melodic$presence <- list()
-    melodic$presence$mpd <- melodic$presence$rao <- melodic$presence$simpson <- numeric(N)
-  }
+  out$richness <- numeric(N)
   
-  melodic$richness <- numeric(N)
-  
-  for(i in 1:N){
-    sppInSample <- names(samp[i, samp[i, ] > 0])
-    melodic$richness[i] <- rowSums(samp > 0)[i]
+  for (i in 1:N) {
+    spp_in_sample <- names(samp[i, samp[i, ] > 0])
+    out$richness[i] <- sum(samp[i, ] > 0)
     
-    if(length(sppInSample) > 1){
-      sample.dis <- dis[sppInSample, sppInSample]
+    if (length(spp_in_sample) > 1) {
+      sample_dis <- dis[spp_in_sample, spp_in_sample, drop = FALSE]
       
-      if(type == "both" | type == "abundance"){
-        abund.w <- samp[i, sppInSample] / sum(samp[i, sppInSample])
-        sample.weights <- outer(abund.w, abund.w)
-        melodic$abundance$mpd[i] <- weighted.mean(
-          sample.dis[lower.tri(sample.dis)],
-          sample.weights[lower.tri(sample.weights)]
+      if (type %in% c("both", "abundance")) {
+        abund_w <- samp[i, spp_in_sample] / sum(samp[i, spp_in_sample])
+        sample_weights <- outer(abund_w, abund_w)
+        
+        out$abundance$mpd[i] <- weighted.mean(
+          sample_dis[lower.tri(sample_dis)],
+          sample_weights[lower.tri(sample_weights)]
         )
-        melodic$abundance$rao[i] <- sum(sample.weights * sample.dis)
-        melodic$abundance$simpson[i] <- sum(2 * sample.weights[lower.tri(sample.weights)])
-      }
-      
-      if(type == "both" | type == "presence"){
-        abund.nw <- rep(1, length(sppInSample)) / length(sppInSample)
-        sample.weights <- outer(abund.nw, abund.nw)
-        melodic$presence$mpd[i] <- weighted.mean(
-          sample.dis[lower.tri(sample.dis)],
-          sample.weights[lower.tri(sample.weights)]
-        )
-        melodic$presence$rao[i] <- sum(sample.weights * sample.dis)
-        melodic$presence$simpson[i] <- sum(2 * sample.weights[lower.tri(sample.weights)])
+        out$abundance$rao[i] <- sum(sample_weights * sample_dis)
+        out$abundance$simpson[i] <- sum(2 * sample_weights[lower.tri(sample_weights)])
       }
       
     } else {
-      if(type == "both" | type == "abundance"){
-        melodic$abundance$mpd[i] <- NA
-        melodic$abundance$rao[i] <- 0
-        melodic$abundance$simpson[i] <- 0
-      }
-      if(type == "both" | type == "presence"){
-        melodic$presence$mpd[i] <- NA
-        melodic$presence$rao[i] <- 0
-        melodic$presence$simpson[i] <- 0
+      if (type %in% c("both", "abundance")) {
+        out$abundance$mpd[i] <- NA
+        out$abundance$rao[i] <- 0
+        out$abundance$simpson[i] <- 0
       }
     }
   }
   
-  return(melodic)
+  return(out)
 }
 
 
-#### ML ####
+# ---- Helper: calculate Rao for one trait ----
 
-comunidade_ml <- read.csv(
-  "01 Datasets/01_raw_data/comunidade_ml.csv",
-  row.names = 1, header = TRUE, sep = ";", check.names = FALSE
-)
-
-
-funcional_ml <- read.csv(
-  "01 Datasets/01_raw_data/funcional_ml.csv",
-  row.names = 1)
-
-atributos <- c("WD", "SLA", "LDMC")
-
-# use only selected traits
-functional_data <- funcional_ml[, atributos, drop = FALSE]
-
-# standardize
-
-functional_data_scaled <- scale(functional_data)
-
-# Dissim matrix
-
-dist_func_ml <- as.matrix(dist(functional_data_scaled, method = "euclidean"))
-
-# 0 and 1
-
-dist_func_ml <- dist_func_ml / max(dist_func_ml)
-
-# Run function melodic
-
-res_func_ml <- melodic(
-  samp = comunidade_ml,
-  dis = dist_func_ml,
-  type = "abundance"
-)
-
-
-melodic_ML <- data.frame(
-  plot = rownames(comunidade_ml),
-  richness = res_func_ml$richness,
-  MPD_func = res_func_ml$abundance$mpd,
-  Rao_func = res_func_ml$abundance$rao,
-  Simpson  = res_func_ml$abundance$simpson
-)
-
-write.csv(
-  melodic_ML,
-  "01 Datasets/02_processed_data/melodic_ML.csv",
-  row.names = FALSE
-)
-
-
-#### REGUA ####
-
-# Read data
-comunidade_regua <- read.csv("01 Datasets/01_raw_data/comunidade_regua.csv", row.names = 1, sep = ";", check.names = FALSE)
-
-funcional_regua <- read.csv("01 Datasets/01_raw_data/funcional_regua.csv", 
-                            row.names = 1)
-
-# Select traits
-atributos <- c("WD", "SLA", "LDMC")
-
-# use only selected traits
-functional_data <- funcional_regua[, atributos, drop = FALSE]
-
-# standardize
-functional_data_scaled <- scale(functional_data)
-
-# Dissim matrix
-dist_func_regua <- as.matrix(dist(functional_data_scaled, method = "euclidean"))
-
-# 0 and 1
-dist_func_regua <- dist_func_regua / max(dist_func_regua)
-
-# Run function melodic
-res_func_regua <- melodic(
-  samp = comunidade_regua,
-  dis = dist_func_regua,
-  type = "abundance"
-)
-
-# Organize results
-melodic_REGUA <- data.frame(
-  plot = rownames(comunidade_regua),
-  richness = res_func_regua$richness,
-  MPD_func = res_func_regua$abundance$mpd,
-  Rao_func = res_func_regua$abundance$rao,
-  Simpson  = res_func_regua$abundance$simpson
-)
-
-# Save csv
-write.csv(
-  melodic_REGUA,
-  "01 Datasets/02_processed_data/melodic_REGUA.csv",
-  row.names = FALSE
-)
-
-
-melodic_ML$site <- "ML"
-melodic_REGUA$site <- "REGUA"
-
-# ---- Rao for each trait ----
-
-functional_data <- read.csv("C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/funcional_ml_regua.csv",
-  row.names = 1,header = TRUE, sep = ";")
-
-rownames(functional_data) <- gsub(" ", "_", trimws(rownames(functional_data)))
- 
-colnames(comunidade_ml) <- gsub(" ", "_", trimws(colnames(comunidade_ml)))
-colnames(comunidade_regua) <- gsub(" ", "_", trimws(colnames(comunidade_regua)))
-
-rao_trait <- function(trait_df, comunidade){
+calculate_rao_single_trait <- function(comm, traits, trait_name) {
+  trait_df <- traits[, trait_name, drop = FALSE]
   
   dist_mat <- as.matrix(dist(trait_df, method = "euclidean"))
-  
   dist_mat <- dist_mat / max(dist_mat)
   
   res <- melodic(
-    samp = comunidade,
+    samp = comm,
     dis = dist_mat,
     type = "abundance"
   )
   
-  return(res$abundance$rao)
+  res$abundance$rao
 }
 
-# ML
 
-Rao_WD_ml   <- rao_trait(functional_data[, "WD", drop = FALSE], comunidade_ml)
-Rao_SLA_ml  <- rao_trait(functional_data[, "SLA", drop = FALSE], comunidade_ml)
-Rao_LDMC_ml <- rao_trait(functional_data[, "LDMC", drop = FALSE], comunidade_ml)
+# ---- Helper: calculate all metrics for one site ----
 
-Rao_WD_regua   <- rao_trait(functional_data[, "WD", drop = FALSE], comunidade_regua)
-Rao_SLA_regua  <- rao_trait(functional_data[, "SLA", drop = FALSE], comunidade_regua)
-Rao_LDMC_regua <- rao_trait(functional_data[, "LDMC", drop = FALSE], comunidade_regua)
+calculate_functional_metrics <- function(comm_file, trait_file, site_name) {
+  comm <- read.csv(
+    comm_file,
+    row.names = 1,
+    header = TRUE,
+    sep = ";",
+    check.names = FALSE
+  )
+  
+  traits <- read.csv(
+    trait_file,
+    row.names = 1,
+    header = TRUE
+  )
+  
+  # Clean species names
+  rownames(traits) <- gsub(" ", "_", trimws(rownames(traits)))
+  colnames(comm)   <- gsub(" ", "_", trimws(colnames(comm)))
+  
+  # Keep only shared species
+  shared_species <- intersect(colnames(comm), rownames(traits))
+  comm   <- comm[, shared_species, drop = FALSE]
+  traits <- traits[shared_species, , drop = FALSE]
+  
+  # Overall multivariate Rao
+  traits_scaled <- scale(traits)
+  dist_func <- as.matrix(dist(traits_scaled, method = "euclidean"))
+  dist_func <- dist_func / max(dist_func)
+  
+  res <- melodic(
+    samp = comm,
+    dis = dist_func,
+    type = "abundance"
+  )
+  
+  # Rao for each trait
+  rao_wd    <- calculate_rao_single_trait(comm, traits, "WD")
+  rao_sla   <- calculate_rao_single_trait(comm, traits, "SLA")
+  rao_ldmc  <- calculate_rao_single_trait(comm, traits, "LDMC")
+  rao_leafc <- calculate_rao_single_trait(comm, traits, "leafC")
+  rao_leafn <- calculate_rao_single_trait(comm, traits, "leafN")
+  rao_leafp <- calculate_rao_single_trait(comm, traits, "leafP")
+  
+  data.frame(
+    plot = rownames(comm),
+    site = site_name,
+    richness = res$richness,
+    MPD_func = res$abundance$mpd,
+    raoq = res$abundance$rao,   # overall Rao replacing old raoq
+    Simpson = res$abundance$simpson,
+    Rao_WD = rao_wd,
+    Rao_SLA = rao_sla,
+    Rao_LDMC = rao_ldmc,
+    Rao_leafC = rao_leafc,
+    Rao_leafN = rao_leafn,
+    Rao_leafP = rao_leafp,
+    row.names = NULL
+  )
+}
 
 
-# organize Rao results
+# ---- Run for both sites ----
 
-rao_traits_ML <- data.frame(
-  plot = rownames(comunidade_ml),
-  Rao_WD = Rao_WD_ml,
-  Rao_SLA = Rao_SLA_ml,
-  Rao_LDMC = Rao_LDMC_ml,
-  site = "ML"
+metrics_ml <- calculate_functional_metrics(
+  comm_file  = "01 Datasets/01_raw_data/comunidade_ml.csv",
+  trait_file = "01 Datasets/01_raw_data/funcional_ml.csv",
+  site_name  = "ML"
 )
 
-rao_traits_REGUA <- data.frame(
-  plot = rownames(comunidade_regua),
-  Rao_WD = Rao_WD_regua,
-  Rao_SLA = Rao_SLA_regua,
-  Rao_LDMC = Rao_LDMC_regua,
-  site = "REGUA"
+metrics_regua <- calculate_functional_metrics(
+  comm_file  = "01 Datasets/01_raw_data/comunidade_regua.csv",
+  trait_file = "01 Datasets/01_raw_data/funcional_regua.csv",
+  site_name  = "REGUA"
 )
 
-# join ML + REGUA
-rao_traits_all <- rbind(rao_traits_ML, rao_traits_REGUA)
-
-# se dadosreg estiver com plot nos rownames
-dadosreg$plot <- rownames(dadosreg)
+new_metrics <- rbind(metrics_ml, metrics_regua)
 
 
-dadosreg$plot <- rownames(dadosreg)
-colnames(dadosreg)
+# ---- Join with dadosreg ----
 
-# join
-dadosreg <- merge(dadosreg, rao_traits_all, by = c("plot", "site"), all.x = TRUE)
+dadosreg <- merge(
+  dadosreg,
+  new_metrics,
+  by = c("plot", "site"),
+  all.x = TRUE
+)
 
-
+write.csv(
+  dadosreg,
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
+  row.names = FALSE
+)
 
 
 # ---- Rao Phylogenetic ----

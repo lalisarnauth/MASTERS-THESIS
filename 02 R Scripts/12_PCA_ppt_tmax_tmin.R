@@ -50,7 +50,7 @@ write.csv(dados, "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/
 
 # 3. Scale variables
 dados_stnd <- dados %>% 
-  select(ppt, tmax, tmin, season_ppt) %>% 
+  select(ppt, tmax, tmin, season_ppt,altitude) %>% 
   scale() %>% 
   as.data.frame()
 
@@ -63,7 +63,7 @@ fviz_eig(pca_resultado)  # Scree plot
 
 # 6. Extract variables loadings
 
-jpeg("~/01 Masters_LA/06 Figures/02 plots/pca_aridez.jpeg", 
+jpeg("~/01 Masters_LA/06 Figures/02 plots/pca_aridez1.jpeg", 
      width = 2000, height = 1600, res = 300)
 
 print(fviz_pca_var(pca_resultado, 
@@ -75,10 +75,10 @@ print(fviz_pca_var(pca_resultado,
 dev.off()
 
 # 7. PC1 to use in SEM
-dados$PC1_aridez <- pca_resultado$ind$coord[, 1]
+dados$PC1_2_aridez <- pca_resultado$ind$coord[, 1:2]
 
 # 8. Check the direction of PC1 (important for interpretation)
-cor(dados_padronizados, dados$PC1_aridez)
+cor(dados_stnd, dados$PC1_2_aridez)
 
 # 9. Save PC1 data
 write.csv(dados, 
