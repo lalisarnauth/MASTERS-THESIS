@@ -727,12 +727,8 @@ dd_H2 <- dredge(
     !(cwm_leafc && cwm_leafn) &
     !(cwm_leafc && cwm_leafp) &
     !(cwm_leafc && cwm_leafcn) &
-    !(cwm_leafn && cwm_leafp) &
     !(cwm_leafn && cwm_leafcn) &
     !(cwm_leafp && cwm_leafcn) &
-    
-    # foliar economic spectrum
-    !(cwm_sla && cwm_ldmc) &
     
     # PCs do not include the original variables that compose them.
     !(PC1 && cwm_sla) &
@@ -767,6 +763,7 @@ sw(dd_H1)
 
 model.avg(dd_H2, subset = delta < 2,rank = "AICc")
 sw(dd_H2)
+head(dd_H2, 1)
 
 # H3 - Diversity and Identity
 
@@ -805,175 +802,562 @@ vif(MH3)
 
 # ---- Diversity or identity? ----
 
+dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE)
+
 # Diversity
 
-mdiv1 <- lm(log_biomass~ Rao_LDMC+Rao_WD, data = dadosreg)
+mdiv1 <- lm(log_biomass~ scale(Rao_LDMC) + scale(Rao_WD), data = dadosreg)
 summary(mdiv1) # R2 = 0.39
+AICc(mdiv1) # 37.27
 
 mdiv2 <- lm(log_biomass~ raoq, data = dadosreg)
-summary(mdiv2) # R2 = -0.02712
+summary(mdiv2) # R2 = -0.03
 
-mdiv3 <- lm(log_biomass~ Rao_phylo, data = dadosreg)
+mdiv3 <- lm(log_biomass ~ Rao_phylo, data = dadosreg)
 summary(mdiv3) # R2 = 0.05
+
+mdiv4 <- lm(log_biomass~Simpson, data = dadosreg)
+summary(mdiv4) # R2 = -0.04
 
 # Identity
 
 mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
 summary(mid1) # R2 = 0.50
+AICc(mid1) # 30.95
 
 mid2 <- lm(log_biomass ~ PC1, data = dadosreg)
 summary(mid2) # R2 =  0.19
 
+mid3 <- lm(log_biomass ~ PC2, data = dadosreg)
+summary(mid3) # R2 =  0.19
+
 # Diversity and identity?
 
-mdiv.id <- lm(log_biomass~ Rao_LDMC + cwm_leafn, data = dadosreg)
+mdiv.id <- lm(log_biomass~ Rao_LDMC + scalecwm_leafn, data = dadosreg)
 summary(mdiv.id) # R2 = 0.59
 vif(mdiv.id)
+AICc(mdiv.id) # 28.4
 
-# ---- Model selection table ----
+mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1 + PC2, data = dadosreg)
+summary(mdiv.id2) # R2 = 0.46
 
+mdiv.id3 <- lm(log_biomass~ PC1 + PC2, data = dadosreg)
+summary(mdiv.id3) # R2 = 0.40
+AICc(mdiv.id3) # 36.9
+
+# ---- Is PD a good proxy for Functional composition? Could PD be used to assess ecosystem function? 
+
+# Read Excel file
+functional_data <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE,row.names = 1)
+
+# Inspect columns
+colnames(functional_data)
+
+# Define independent variables')
+
+variables_func <- c("fdis2","fdiv2","raoq","cwm_leafn","Rao_LDMC","SESPD","SESMNTD", "PSC","PSEab","Rao_phylo")
+
+# Create a dataframe with only these variables
+data_func <- functional_data %>%
+  dplyr::select(all_of(variables_func))
+
+# Optional: Define pretty labels for plot
+labels_pretty_func <- c(
+  fdis2       = "Functional Dispersion",
+  fdiv2       = "Functional Divergence",
+  raoq        = "RaoQ",
+  
+  cwm_leafn   = "CWM Leaf N",
+  
+  Rao_LDMC    =  "Rao LDMC",
+  
+  
+  Rao_phylo   = "Rao phylogenetic",
+  SESPD       = "sesPD",
+  SESMNTD     = "sesMNTD",
+  PSC         = "PSC",
+  PSEab       = "PSE"
+)
+
+# Compute correlation matrix
+cor_matrix_func <- cor(data_func, method = "spearman", use = "pairwise.complete.obs")
+
+# Function for p-values
+cor.mtest <- function(mat, method = "spearman") {
+  mat <- as.matrix(mat)
+  n <- ncol(mat)
+  p.mat <- matrix(NA, n, n)
+  diag(p.mat) <- 0
+  
+  for (i in 1:(n - 1)) {
+    for (j in (i + 1):n) {
+      test <- suppressWarnings(
+        cor.test(mat[, i], mat[, j], method = method, exact = FALSE)
+      )
+      p.mat[i, j] <- p.mat[j, i] <- test$p.value
+    }
+  }
+  
+  colnames(p.mat) <- colnames(mat)
+  rownames(p.mat) <- colnames(mat)
+  return(p.mat)
+}
+
+# p matrix
+p_matrix_func <- cor.mtest(data_func, method = "spearman")
+
+# Pretty names
+pretty_names <- labels_pretty_func[variables_func]
+
+# Rename BOTH matrices
+rownames(cor_matrix_func) <- pretty_names
+colnames(cor_matrix_func) <- pretty_names
+
+rownames(p_matrix_func) <- pretty_names
+colnames(p_matrix_func) <- pretty_names
+
+# Plot
+png("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/correlation_matrix_pd.png",
+    width = 1400, height = 1000, res = 150)
+
+corrplot(cor_matrix_func,
+         method = "circle",
+         type = "upper",
+         tl.col = "black",
+         tl.cex = 0.7,
+         p.mat = p_matrix_func,
+         sig.level = c(0.001, 0.01, 0.05),
+         insig = "label_sig",
+         pch.cex = 1.2,
+         pch.col = "black")
+
+dev.off()
+
+# ---- Table ----
+
+# Load packages
+
+library(dplyr)
 library(MuMIn)
-library(dplyr)
-library(purrr)
-library(tibble)
 library(flextable)
-library(officer)
+library(officer) # save word
 
-# Extract predictors from model
-get_predictors_pretty <- function(model) {
-  terms_vec <- attr(terms(model), "term.labels")
-  
-  pretty_names <- c(
-    cwm_leafn = "CWM leaf N",
-    cwm_wd = "CWM wood density",
-    cwm_ldmc = "CWM LDMC",
-    cwm_sla = "CWM SLA",
-    cwm_leafc = "CWM leaf C",
-    cwm_leafp = "CWM leaf P",
-    cwm_leafcn = "CWM leaf C:N",
-    raoq = "RaoQ",
-    Rao_phylo = "Phylogenetic Rao",
-    Simpson = "Simpson",
-    fdis_ldmc = "FDis LDMC",
-    fdis_wd = "FDis wood density",
-    fdis_sla = "FDis SLA",
-    fdis_leafc = "FDis leaf C",
-    fdis_leafn = "FDis leaf N",
-    fdis_leafp = "FDis leaf P",
-    fric2 = "FRic",
-    fdis2 = "FDis",
-    fdiv2 = "FDiv",
-    fric_leafp = "FRic leaf P",
-    fric_leafn = "FRic leaf N",
-    fric_leafc = "FRic leaf C",
-    fric_ldmc = "FRic LDMC",
-    fric_sla = "FRic SLA",
-    SESPD = "sesPD",
-    SESMNTD = "sesMNTD",
-    PSC = "PSC",
-    PSEab = "PSE",
-    PC1 = "PC1 CWM",
-    PC2 = "PC2 CWM"
-  )
-  
-  terms_vec <- ifelse(terms_vec %in% names(pretty_names),
-                      pretty_names[terms_vec],
-                      terms_vec)
-  
-  paste(terms_vec, collapse = " + ")
+# Fit models
+
+# Diversity
+mdiv1 <- lm(log_biomass ~ Rao_LDMC + Rao_WD, data = dadosreg)
+mdiv2 <- lm(log_biomass ~ raoq, data = dadosreg)
+mdiv3 <- lm(log_biomass ~ Rao_phylo, data = dadosreg)
+mdiv4 <- lm(log_biomass ~ Simpson, data = dadosreg)
+
+# Identity
+mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
+mid2 <- lm(log_biomass ~ PC1, data = dadosreg)
+mid3 <- lm(log_biomass ~ PC2, data = dadosreg)
+
+# Diversity + Identity
+mdiv.id  <- lm(log_biomass ~ Rao_LDMC + cwm_leafn, data = dadosreg)
+mdiv.id2 <- lm(log_biomass ~ Rao_LDMC + PC1 + PC2, data = dadosreg)
+mdiv.id3 <- lm(log_biomass ~ Rao_LDMC + PC1, data = dadosreg)
+
+# Organize models
+
+models <- list(
+  "Rao_LDMC + Rao_WD"      = mdiv1,
+  "RaoQ"                   = mdiv2,
+  "Rao phylogenetic"       = mdiv3,
+  "Simpson"                = mdiv4,
+  "CWM Leaf N"             = mid1,
+  "PC1"                    = mid2,
+  "PC2"                    = mid3,
+  "Rao_LDMC + CWM Leaf N"  = mdiv.id,
+  "Rao_LDMC + PC1 + PC2"   = mdiv.id2,
+  "Rao_LDMC + PC1"         = mdiv.id3
+)
+
+model_type <- c(
+  "Rao_LDMC + Rao_WD"      = "Diversity",
+  "RaoQ"                   = "Diversity",
+  "Rao phylogenetic"       = "Diversity",
+  "Simpson"                = "Diversity",
+  "CWM Leaf N"             = "Identity",
+  "PC1"                    = "Identity",
+  "PC2"                    = "Identity",
+  "Rao_LDMC + CWM Leaf N"  = "Diversity + Identity",
+  "Rao_LDMC + PC1 + PC2"   = "Diversity + Identity",
+  "Rao_LDMC + PC1"         = "Diversity + Identity"
+)
+
+# Pretty model formulas
+
+model_forms <- c(
+  "Rao_LDMC + Rao_WD"      = "log_biomass = β0 + β1 Rao LDMC + β2 Rao WD",
+  "RaoQ"                   = "log_biomass = β0 + β1 RaoQ",
+  "Rao phylogenetic"       = "log_biomass = β0 + β1 Rao phylogenetic",
+  "Simpson"                = "log_biomass = β0 + β1 Simpson",
+  "CWM Leaf N"             = "log_biomass = β0 + β1 CWM Leaf N",
+  "PC1"                    = "log_biomass = β0 + β1 PC1",
+  "PC2"                    = "log_biomass = β0 + β1 PC2",
+  "Rao_LDMC + CWM Leaf N"  = "log_biomass = β0 + β1 Rao LDMC + β2 CWM Leaf N",
+  "Rao_LDMC + PC1 + PC2"   = "log_biomass = β0 + β1 Rao LDMC + β2 PC1 + β3 PC2",
+  "Rao_LDMC + PC1"              = "log_biomass = β0 + β1 Rao_LDMC + β2 PC2"
+)
+
+# Pretty predictor names
+
+pretty_terms <- c(
+  "Rao_LDMC"  = "Rao LDMC",
+  "Rao_WD"    = "Rao WD",
+  "raoq"      = "RaoQ",
+  "Rao_phylo" = "Rao phylogenetic",
+  "Simpson"   = "Simpson",
+  "cwm_leafn" = "CWM Leaf N",
+  "PC1"       = "PC1 CWM",
+  "PC2"       = "PC2 CWM"
+)
+
+# Helper functions
+
+# model p-value
+get_model_p <- function(model) {
+  f <- summary(model)$fstatistic
+  pf(f[1], f[2], f[3], lower.tail = FALSE)
 }
 
-# Function to create hypothesis table
-
-make_top_models_table <- function(dd, hypothesis_name, n_top = 2) {
-  
-  # pega os melhores modelos
-  mods <- get.models(dd, 1:n_top)
-  
-  # extrai tabela do dredge
-  dd_top <- as.data.frame(dd) %>%
-    slice(1:n_top)
-  
-  # monta tabela final
-  out <- tibble(
-    Hypothesis = hypothesis_name,
-    Predictors = map_chr(mods, get_predictors_pretty),
-    K = dd_top$df,
-    logLik = round(dd_top$logLik, 3),
-    AICc = round(dd_top$AICc, 3),
-    `ΔAICc` = round(dd_top$delta, 3),
-    Weight = round(dd_top$weight, 3)
-  )
-  
-  return(out)
+# sample size
+get_n <- function(model) {
+  length(model$fitted.values)
 }
 
+# format p-values
+format_p <- function(p) {
+  ifelse(p < 0.0001, "< 0.0001", sprintf("%.4f", p))
+}
 
-# Create a table for each hypothesis
-
-tab_H1 <- make_top_models_table(dd_H1, "Diversity hypothesis", n_top = 2)
-tab_H2 <- make_top_models_table(dd_H2, "Identity hypothesis", n_top = 2)
-tab_H3 <- make_top_models_table(dd_H3, "Diversity + identity hypothesis", n_top = 2)
-
-# Bind
-
-tab_final_models <- bind_rows(tab_H1, tab_H2, tab_H3)
-
-tab_final_models
-
-ft_models <- flextable(tab_final_models) %>%
-  autofit()
-
-ft_models
-
-# Export to word
-
-doc <- read_docx() %>%
-  body_add_par("Table X. Top-ranked models for each hypothesis.", style = "heading 1") %>%
-  body_add_flextable(ft_models)
-
-print(doc, target = "C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/top_models_hypotheses.docx")
-
-# ---- Best model Table ----
-
-best_H3 <- get.models(dd_H3, 1)[[1]]
-summary(best_H3)
-
-library(broom)
-library(dplyr)
-library(flextable)
-
-tab_H3 <- tidy(best_H3) %>%
-  mutate(
-    term = dplyr::recode(term,
-                         "(Intercept)" = "Intercept",
-                         "cwm_leafn"   = "CWM leaf N",
-                         "raoq"        = "RaoQ",
-                         "Simpson"     = "Simpson"
-    ),
-    across(where(is.numeric), ~ round(.x, 3))
+# extract predictor-level info
+get_coef_table <- function(model) {
+  coef_tab <- summary(model)$coefficients
+  
+  coef_df <- data.frame(
+    term = rownames(coef_tab),
+    estimate = coef_tab[, 1],
+    p = coef_tab[, 4],
+    stringsAsFactors = FALSE
   ) %>%
-  select(
-    Predictor = term,
-    Estimate = estimate,
-    `SE` = std.error,
-    `t` = statistic,
-    `p` = p.value
+    filter(term != "(Intercept)") %>%
+    mutate(
+      `Predictor variables` = dplyr::recode(term, !!!pretty_terms),
+      Slope = ifelse(estimate > 0, "+", "−"),
+      P = format_p(p)
+    ) %>%
+    select(`Predictor variables`, Slope, P)
+  
+  return(coef_df)
+}
+
+# Model level metrics
+
+model_metrics <- data.frame(
+  Model_name = names(models),
+  AICc = sapply(models, AICc),
+  R2 = sapply(models, function(x) summary(x)$r.squared),
+  N = sapply(models, get_n),
+  Model_P = sapply(models, get_model_p),
+  stringsAsFactors = FALSE
+) %>%
+  mutate(
+    deltaAICc = AICc - min(AICc)
   )
 
-ft_H3 <- flextable(tab_H3)
-ft_H3
+# Build final table
 
-library(officer)
+tab_list <- lapply(names(models), function(mod_name) {
+  
+  model <- models[[mod_name]]
+  coefs <- get_coef_table(model)
+  
+  metrics <- model_metrics %>% filter(Model_name == mod_name)
+  
+  model_row <- data.frame(
+    `Model type` = model_type[mod_name],
+    `Model form` = model_forms[mod_name],
+    `Predictor variables` = "Model",
+    Slope = "",
+    P = format_p(metrics$Model_P),
+    N = metrics$N,
+    R2 = sprintf("%.2f", metrics$R2),
+    AICc = sprintf("%.2f", metrics$AICc),
+    deltaAICc = sprintf("%.2f", metrics$deltaAICc),
+    stringsAsFactors = FALSE
+  )
+  
+  predictor_rows <- data.frame(
+    `Model type` = "",
+    `Model form` = "",
+    `Predictor variables` = coefs$`Predictor variables`,
+    Slope = coefs$Slope,
+    P = coefs$P,
+    N = "",
+    R2 = "",
+    AICc = "",
+    deltaAICc = "",
+    stringsAsFactors = FALSE
+  )
+  
+  bind_rows(model_row, predictor_rows)
+})
 
-doc <- read_docx() %>%
-  body_add_par("Table X. Final model for H3.", style = "heading 1") %>%
-  body_add_flextable(ft_H3)
+results_table <- bind_rows(tab_list)
 
-print(doc, target = "C:/Users/Laíla Arnauth/OneDrive/Documentos/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/H3_table.docx")
+# Order by AICc
+
+model_order <- model_metrics %>%
+  arrange(AICc) %>%
+  pull(Model_name)
+
+results_table$Model_name_aux <- NA_character_
+
+model_rows <- which(results_table$`Predictor variables` == "Model")
+results_table$Model_name_aux[model_rows] <- model_order
+
+# propagate model names downward
+current_name <- NA
+for(i in seq_len(nrow(results_table))) {
+  if(!is.na(results_table$Model_name_aux[i])) current_name <- results_table$Model_name_aux[i]
+  results_table$Model_name_aux[i] <- current_name
+}
+
+results_table <- results_table %>%
+  mutate(Model_name_aux = factor(Model_name_aux, levels = model_order)) %>%
+  arrange(Model_name_aux) %>%
+  select(-Model_name_aux)
+
+# View table
+
+results_table
+
+# Flextable
+
+ft <- flextable(results_table)
+ft <- theme_booktabs(ft)
+ft <- autofit(ft)
+
+ft <- align(ft, align = "left",
+            j = c("Model.type", "Model.form", "Predictor.variables"),
+            part = "all")
+
+ft <- align(ft, align = "center",
+            j = c("Slope", "P", "N", "R2", "AICc", "deltaAICc"),
+            part = "all")
+
+ft <- valign(ft, valign = "top", part = "all")
+ft <- bold(ft, i = ~ Predictor.variables == "Model", bold = TRUE, part = "body")
+
+ft
+
+doc <- read_docx()
+doc <- body_add_flextable(doc, ft)
+
+print(doc, target = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/model_comparison_table.docx")
 
 
-# ---- INDIVIDUAL PLOTS ----
+# ---- Variance partition ----
+
+mdiv.id <- lm(log_biomass~ Rao_LDMC +Rao_WD + cwm_leafn, data = dadosreg)
+summary(mdiv.id) # R2 = 0.59
+
+library(vegan)
+
+# Response
+Y <- data.frame(log_biomass = dadosreg$log_biomass)
+
+# Functional diversity (FD)
+FD <- data.frame(
+  Rao_LDMC = dadosreg$Rao_LDMC,
+  Rao_WD   = dadosreg$Rao_WD
+)
+
+# Identity (ID)
+ID <- data.frame(
+  cwm_leafn = dadosreg$cwm_leafn
+)
+
+# Variance partitioning
+vp <- varpart(Y, FD, ID)
+
+# Results
+vp
+summary(vp)
+
+# Plot
+
+jpeg("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/varpart_plot.jpeg", width = 1900, height = 1550, res = 300)
+
+plot(vp,
+     bg = c("lightblue", "mistyrose"),
+     Xnames = c("FD", "Identity"),
+     id.size = 1.2,
+     cutoff = 0,
+     cex = 1.2)
+dev.off()
+
+# Species selection
+
+library(Select)
+
+# Trait matrix
+traits <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/funcional_ml_regua_2.csv",row.names = 1)
+
+# trait to constrain: high leaf N
+t2c <- as.matrix(traits[, "leafN", drop = FALSE])
+
+# trait to diversify: LDMC
+t2d <- as.matrix(traits[, "LDMC", drop = FALSE])
+
+# constraint value: high CWM leaf N
+con <- c(leafN = unname(quantile(traits$leafN, 0.75)))
+
+# run optimization
+res <- selectSpecies(
+  t2c = t2c,
+  con = con,
+  t2d = t2d,
+  obj = "QH"
+)
+
+str(res)
+names(res)
+
+# See spp and probabilities 
+out <- data.frame(
+  species = rownames(traits),
+  prob = res$prob,
+  leafN = traits$leafN,
+  LDMC = traits$LDMC
+)
+
+# ordenar do mais importante pro menos
+out <- out[order(out$prob, decreasing = TRUE), ]
+
+out
+
+library(ggplot2)
+
+ggplot(out, aes(x = leafN, y = LDMC, size = prob)) +
+  geom_point(alpha = 0.8) +
+  geom_text(aes(label = species), hjust = 0, nudge_x = 0.03, size = 3) +
+  scale_size(range = c(2, 10)) +
+  labs(
+    x = "Leaf N",
+    y = "LDMC",
+    size = "Selection probability"
+  ) +
+  theme_minimal() +
+  theme(panel.grid = element_blank())
+
+# What species should I plant and in what proportions?
+
+out <- data.frame(
+  species = rownames(traits),
+  prob = as.numeric(res$prob),
+  leafN = traits$leafN,
+  LDMC = traits$LDMC
+)
+
+out <- out[order(out$prob, decreasing = TRUE), ]
+out$cumprob <- cumsum(out$prob)
+
+out
+
+# Select species that 80%
+
+selected_80 <- subset(out, cumprob <= 0.80)
+
+
+if(max(selected_80$cumprob) < 0.80){
+  selected_80 <- out[1:(nrow(selected_80) + 1), ]
+}
+
+selected_80
+
+#
+
+selected_90 <- subset(out, cumprob <= 0.90)
+
+if(max(selected_90$cumprob) < 0.90){
+  selected_90 <- out[1:(nrow(selected_90) + 1), ]
+}
+
+selected_90
+
+# Planting proportions
+
+selected_80$planting_prop <- selected_80$prob / sum(selected_80$prob)
+selected_80
+
+# other plot option
+
+out <- out[order(out$prob, decreasing = TRUE), ]
+
+top10 <- out[1:10, ]
+out$group <- ifelse(out$species %in% top10$species, "Key species", "Other species")
+
+# Plot
+
+library(ggrepel)
+
+p <- ggplot(out, aes(x = leafN, y = LDMC)) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.20, ymax = 0.30,
+           fill = "#f0f0f0", alpha = 0.6) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.30, ymax = 0.40,
+           fill = "#d9d9d9", alpha = 0.6) +
+  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 0.40, ymax = 0.55,
+           fill = "#f0f0f0", alpha = 0.6) +
+  geom_vline(xintercept = unname(target), linetype = "dashed", linewidth = 0.8) +
+  geom_point(aes(size = prob), color = "grey75", alpha = 0.7) +
+  geom_point(data = top10, aes(size = prob), color = "#2E7D32", alpha = 0.95) +
+  geom_text_repel(
+    data = top10,
+    aes(label = species),
+    size = 4,
+    max.overlaps = Inf,
+    box.padding = 0.5,
+    point.padding = 0.5,
+    min.segment.length = 0,
+    nudge_x = 0.03
+  ) +
+  scale_size(range = c(2, 10)) +
+  labs(
+    x = "Leaf nitrogen (CWM driver)",
+    y = "LDMC (functional diversity axis)",
+    size = "Selection probability"
+  ) +
+  coord_cartesian(
+    xlim = c(min(out$leafN) - 0.05, max(out$leafN) + 0.15),
+    ylim = c(0.20, 0.55),
+    clip = "on"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black")
+  )
+
+print(p)
+
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/species_selection_plot.jpeg",
+  plot = p,
+  width = 9,
+  height = 5,
+  dpi = 300,
+  units = "in",
+  bg = "white"
+)
+
+
+# ---- Individual Plots ----
 
 # Fit the model
 fit <- lm(log_biomass ~ fric_ldmc, data = dadosreg)
@@ -1294,53 +1678,194 @@ ggplot(dadosreg, aes(x = RaoQ_LDMC, y = log_produt, color = sitemis)) +
 
 ####### Partial Effects Div + Id model #######
 
+
 library(ggeffects)
 library(ggplot2)
 library(patchwork)
+library(tidyverse)
 
-# gerar predições
-pred_ldmc  <- ggpredict(mdiv.id, terms = "Rao_LDMC")
-pred_leafn <- ggpredict(mdiv.id, terms = "cwm_leafn")
+# Scale
 
-plot_partial <- function(pred, data, var, xlab) {
-  
-  ggplot() +
-    # intervalo de confiança
-    geom_ribbon(data = pred,
-                aes(x = x, ymin = conf.low, ymax = conf.high),
-                alpha = 0.2) +
-    
-    # linha do modelo
-    geom_line(data = pred,
-              aes(x = x, y = predicted),
-              linewidth = 1) +
-    
-    # pontos observados
-    geom_point(data = data,
-               aes_string(x = var, y = "log_biomass"),
-               alpha = 0.6) +
-    
-    labs(
-      x = xlab,
-      y = "Log biomass"
-    ) +
-    
-    theme_minimal() +
-    theme(
-      panel.grid = element_blank(),
-      axis.line = element_line(color = "black"),
-      axis.ticks = element_line(color = "black"),
-      axis.text = element_text(size = 11),
-      axis.title = element_text(size = 12)
+dadosreg2 <- dadosreg %>%
+  mutate(
+    z_biomass   = as.numeric(scale(log_biomass)),
+    z_leafn     = as.numeric(scale(cwm_leafn)),
+    z_Rao_LDMC  = as.numeric(scale(Rao_LDMC))
+  )
+
+mdiv.id.z <- lm(z_biomass ~ z_Rao_LDMC + z_leafn, data = dadosreg2)
+summary(mdiv.id.z)
+
+pred_leafn <- ggpredict(mdiv.id.z, terms = "z_leafn")
+pred_ldmc  <- ggpredict(mdiv.id.z, terms = "z_Rao_LDMC")
+
+p1 <- ggplot() +
+  geom_point(
+    data = dadosreg2,
+    aes(x = z_leafn, y = z_biomass),
+    size = 2.5,
+    alpha = 0.8
+  ) +
+  geom_line(
+    data = pred_leafn,
+    aes(x = x, y = predicted),
+    linewidth = 1.2
+  ) +
+  geom_ribbon(
+    data = pred_leafn,
+    aes(x = x, ymin = conf.low, ymax = conf.high),
+    alpha = 0.2
+  ) +
+  labs(
+    x = "CWM Leaf N (scaled)",
+    y = "Log biomass (scaled)",
+    tag = "(a)"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    plot.tag = element_text(face = "bold")
+  )
+
+p2 <- ggplot() +
+  geom_point(
+    data = dadosreg2,
+    aes(x = z_Rao_LDMC, y = z_biomass),
+    size = 2.5,
+    alpha = 0.8
+  ) +
+  geom_line(
+    data = pred_ldmc,
+    aes(x = x, y = predicted),
+    linewidth = 1.2
+  ) +
+  geom_ribbon(
+    data = pred_ldmc,
+    aes(x = x, ymin = conf.low, ymax = conf.high),
+    alpha = 0.2
+  ) +
+  labs(
+    x = "Rao LDMC (scaled)",
+    y = NULL,
+    tag = "(b)"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    plot.tag = element_text(face = "bold")
+  )
+
+final_plot <- p1 + p2
+print(final_plot)
+
+# Coefficient plot (Univariate) ----
+
+library(dplyr)
+library(broom)
+library(ggplot2)
+
+# Fit standardized univariate models
+models <- list(
+  "RaoQ"             = lm(log_biomass ~ scale(raoq), data = dadosreg),
+  "Rao phylogenetic" = lm(log_biomass ~ scale(Rao_phylo), data = dadosreg),
+  "Rao LDMC"         = lm(log_biomass ~ scale(Rao_LDMC), data = dadosreg),
+  "Rao WD"           = lm(log_biomass ~ scale(Rao_WD), data = dadosreg),
+  "Simpson"          = lm(log_biomass ~ scale(Simpson), data = dadosreg),
+  "CWM Leaf N"       = lm(log_biomass ~ scale(cwm_leafn), data = dadosreg),
+  "PC1"              = lm(log_biomass ~ scale(PC1), data = dadosreg),
+  "PC2"              = lm(log_biomass ~ scale(PC2), data = dadosreg)
+)
+
+# Build dataframe for plotting
+coef_plot <- bind_rows(
+  lapply(names(models), function(x) {
+    tidy(models[[x]], conf.int = TRUE) %>%
+      filter(term != "(Intercept)") %>%
+      mutate(predictor = x)
+  })
+) %>%
+  mutate(
+    group = ifelse(
+      predictor %in% c("RaoQ", "Rao phylogenetic", "Rao LDMC", "Rao WD", "Simpson"),
+      "Diversity", "Identity"
+    ),
+    significance = ifelse(
+      conf.low <= 0 & conf.high >= 0,
+      "Not significant", "Significant"
+    ),
+    predictor = factor(
+      predictor,
+      levels = rev(c(
+        "RaoQ",
+        "Rao phylogenetic",
+        "Rao LDMC",
+        "Rao WD",
+        "Simpson",
+        "CWM Leaf N",
+        "PC1",
+        "PC2"
+      ))
     )
-}
+  )
 
-p1 <- plot_partial(pred_ldmc, dadosreg, "Rao_LDMC", "Rao (LDMC)")
-p2 <- plot_partial(pred_leafn, dadosreg, "cwm_leafn", "CWM leaf N")
+# Plot
+p_coef <- ggplot(coef_plot, aes(x = estimate, y = predictor, color = group)) +
+  geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.7) +
+  geom_hline(yintercept = 3.5, linetype = "dotted", linewidth = 0.5, color = "grey40") +
+  geom_errorbar(
+    aes(xmin = conf.low, xmax = conf.high),
+    width = 0.15,
+    orientation = "y",
+    linewidth = 0.7
+  ) +
+  geom_point(
+    aes(fill = ifelse(significance == "Significant", group, "Not significant"), color = group),
+    shape = 21,
+    size = 3.2,
+    stroke = 1
+  ) +
+  scale_color_manual(
+    values = c(
+      "Diversity" = "#8B2E2E",
+      "Identity" = "#0B5D69"
+    )
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Diversity" = "#8B2E2E",
+      "Identity" = "#0B5D69",
+      "Not significant" = "white"
+    )
+  ) +
+  labs(
+    x = "Standardized coefficient",
+    y = NULL,
+    fill = NULL
+  ) +
+  guides(fill = "none") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    legend.position = "right"
+  )
 
-fig <- p1 + p2 + plot_layout(ncol = 3)
+p_coef
 
-fig
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/univariate_coefplot.jpeg",
+  plot = p_coef,
+  width = 7,
+  height = 5.5,
+  units = "in",
+  dpi = 300,
+  bg = "white"
+)
 
 
 # ---- 3D PLOT ----
@@ -1442,134 +1967,6 @@ modelo_regua <- lm(log_produt ~ fric_ldmc, data = dadosreg %>% filter(sitemis ==
 summary(modelo_ml) # not significant
 summary(modelo_regua) # not significant
  
-# ---- COEFPLOT ----
-
-#  keep same rows across all models (recommended) 
-dados_uni <- dadosreg %>%
-  dplyr::select(log_biomass, fdis, fdis_ldmc, fdis_wd, fdis_sla,
-                cwm_ldmc, cwm_wd, SESPD, SESMNTD, SR) %>%
-  tidyr::drop_na()
-
-# Predictors in the EXACT order (top -> bottom in the plot)
-preds <- c("fdis",
-           "fdis_ldmc", "fdis_wd", "fdis_sla",
-           "cwm_ldmc", "cwm_wd",
-           "SESPD", "SESMNTD",
-           "SR")
-
-labels <- c(
-  fdis      = "FDis (overall)",
-  fdis_ldmc = "FDis LDMC",
-  fdis_wd   = "FDis Wood Density",
-  fdis_sla  = "FDis SLA",
-  cwm_ldmc  = "CWM LDMC",
-  cwm_wd    = "CWM Wood Density",
-  SESPD     = "sesPD",
-  SESMNTD   = "sesMNTD",
-  SR        = "Species Richness"
-)
-
-# One univariate standardized model per predictor
-mods <- map(preds, \(p){
-  form <- reformulate(termlabels = sprintf("scale(%s)", p),
-                      response   = "scale(log_biomass)")
-  lm(form, data = dados_uni)
-})
-names(mods) <- preds
-
-coef_all_uni <- imap_dfr(mods, \(mod, pred){
-  tidy(mod, conf.int = TRUE) %>%
-    filter(term != "(Intercept)") %>%
-    mutate(
-      predictor = pred,
-      term = labels[[pred]],
-      sig = p.value < 0.05
-    )
-})
-
-# Factor levels to control y-order (ggplot shows first level at bottom, so we reverse)
-desired_order <- labels[preds]  # top->bottom target order
-coef_all_uni <- coef_all_uni %>%
-  mutate(term = factor(term, levels = rev(desired_order)))
-
-# Plot
-coef_plot_uni <- ggplot(coef_all_uni, aes(x = estimate, y = term)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_errorbar(
-    aes(xmin = conf.low, xmax = conf.high),
-    height = 0.2,
-    orientation = "y"
-  ) +
-  geom_point(aes(shape = sig), size = 3) +
-  scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1)) +
-  labs(x = "Standardized effect size (β)", y = NULL) +
-  theme_classic()
-
-coef_plot_uni
-
-ggsave(
-  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Coefplot_Univar_Funct.jpeg",
-  plot = coef_plot_uni,
-  width = 6,
-  height = 5,
-  units = "in",
-  dpi = 300
-)
-
-# ---- COEFPLOT - Partial ----
-
-# Models scaled
-m1z <- lm(scale(log_biomass) ~ scale(fdis_ldmc) + scale(fdis_wd), data = dadosreg)
-m2z <- lm(scale(log_biomass) ~ scale(cwm_ldmc) + scale(cwm_wd), data = dadosreg)
-m3z <- lm(scale(log_biomass) ~ scale(SESMNTD), data = dadosreg)
-m4z <- lm(scale(log_biomass) ~ scale(SR), data = dadosreg)
-
-# Function to extract coefficients
-get_coef <- function(mod, model_name){
-  tidy(mod, conf.int = TRUE) %>%
-    filter(term != "(Intercept)") %>%
-    mutate(model = model_name,
-           sig = p.value < 0.05)
-}
-
-coef_all <- bind_rows(
-  get_coef(m1z, "Functional (FDis)"),
-  get_coef(m2z, "Identity (CWM)"),
-  get_coef(m3z, "Phylogenetic"),
-  get_coef(m4z, "Richness")
-) %>%
-  mutate(term = gsub("scale\\(|\\)", "", term)) %>%
-  mutate(term = dplyr::recode(term,
-                              "fdis_ldmc" = "FDis LDMC",
-                              "fdis_wd"   = "FDis Wood Density",
-                              "cwm_ldmc"  = "CWM LDMC",
-                              "cwm_wd"    = "CWM Wood Density",
-                              "SESMNTD"   = "sesMNTD",
-                              "SR"        = "Species Richness"
-  )) %>%
-  mutate(term = factor(term, levels = rev(unique(term))))
-
-# Plot
-coef_plot <- ggplot(coef_all, aes(x = estimate, y = term)) +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
-  geom_point(aes(shape = sig), size = 3) +
-  scale_shape_manual(values = c(`TRUE` = 16, `FALSE` = 1)) +
-  labs(
-    x = "Standardized effect size (β)",
-    y = NULL
-  ) +
-  theme_classic()
-
-ggsave(
-  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/Coefplot_Functional_Phylo_SR.jpeg",
-  plot = coef_plot,
-  width = 6,
-  height = 5,
-  units = "in",
-  dpi = 300
-)
-
 
 # ---- PHYLO SIGNAL FOR TRAITS ----
 
@@ -1639,6 +2036,141 @@ ggplot(dados2, aes(x = grupo, y = leafN, fill = grupo)) +
 
 wilcox.test(leafN ~ grupo, data = dados2) # 0.2
 
+# Select species based on trait optimization ----
+
+library(Select)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+# 1. Load trait data
+traits <- read.csv(
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/01_raw_data/funcional_ml_regua_2.csv",
+  row.names = 1
+)
+
+# 2. Define traits
+# Trait to constrain: high leaf N
+t2c <- as.matrix(traits[, "leafN", drop = FALSE])
+
+# Trait to diversify: LDMC
+t2d <- as.matrix(traits[, "LDMC", drop = FALSE])
+
+# Target value for leaf N
+target <- as.numeric(quantile(traits$leafN, 0.75))
+
+# Named constraint
+con <- c(leafN = target)
+
+# 3. Run optimization
+res <- selectSpecies(
+  t2c = t2c,
+  con = con,
+  t2d = t2d,
+  obj = "QH"
+)
+
+# 4. Organize output
+out <- data.frame(
+  species = rownames(traits),
+  prob = as.numeric(res$prob),
+  leafN = traits$leafN,
+  LDMC = traits$LDMC
+)
+
+out <- out[order(out$prob, decreasing = TRUE), ]
+top10 <- out[1:10, ]
+
+# 5. Plot
+p_select <- ggplot(out, aes(x = leafN, y = LDMC)) +
+  
+  # LDMC bands in the background
+  annotate(
+    "rect",
+    xmin = -Inf, xmax = Inf,
+    ymin = 0.20, ymax = 0.30,
+    fill = "grey95", alpha = 0.8
+  ) +
+  annotate(
+    "rect",
+    xmin = -Inf, xmax = Inf,
+    ymin = 0.30, ymax = 0.40,
+    fill = "grey50", alpha = 0.35
+  ) +
+  annotate(
+    "rect",
+    xmin = -Inf, xmax = Inf,
+    ymin = 0.40, ymax = 0.55,
+    fill = "grey85", alpha = 0.8
+  ) +
+  
+  # All species
+  geom_point(
+    aes(size = prob),
+    color = "grey60",
+    alpha = 0.7
+  ) +
+  
+  # Top 10 species
+  geom_point(
+    data = top10,
+    aes(size = prob),
+    color = "#1b7837",
+    alpha = 0.95
+  ) +
+  
+  # Leaf N target
+  geom_vline(
+    xintercept = target,
+    linetype = "dashed",
+    linewidth = 0.8
+  ) +
+  
+  # Labels for top 10
+  geom_text_repel(
+    data = top10,
+    aes(label = species),
+    size = 4,
+    max.overlaps = Inf,
+    box.padding = 0.5,
+    point.padding = 0.5,
+    min.segment.length = 0,
+    seed = 123
+  ) +
+  
+  scale_size(range = c(2, 10)) +
+  
+  labs(
+    x = "Leaf nitrogen",
+    y = "LDMC",
+    size = "Selection probability"
+  ) +
+  
+  coord_cartesian(
+    xlim = c(min(out$leafN) - 0.05, max(out$leafN) + 0.15),
+    ylim = c(0.20, 0.55),
+    clip = "on"
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black"),
+    axis.ticks = element_line(color = "black"),
+    legend.position = "right"
+  )
+
+p_select
+
+ggsave(
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/select_species_leafN_LDMC.jpeg",
+  plot = p_select,
+  width = 9,
+  height = 5,
+  units = "in",
+  dpi = 300,
+  bg = "white"
+)
 
 # ---- DECOUPLED EFFECTS ----
 
