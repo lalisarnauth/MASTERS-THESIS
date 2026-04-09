@@ -1,362 +1,381 @@
 
 # ---- SEM ----
 
-library(lavaan)
-
-# Load the data
-
-dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
-
-# Scale
-
-dados_scaled <- as.data.frame(scale(dadosmisto[, sapply(dadosmisto, is.numeric)]))
-
-# ---- H1: Environment only indirect and Diversity direct ---- 
-
-H1 <- '
-  n_trees ~~ sr
-  pcps1 ~~ pse
-  
-  n_trees ~ PC1_clima
-  pcps1 ~ PC1_clima + c.n_solo
-  log_biomass ~ n_trees + sr + pcps1 + pse
-'
-
-fit_H1 <- lavaan::sem(
-  H1,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_H1,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
-
-
-# CFI: 0.725
-
-# ---- H2: Environment is the driver ---- 
-
-H2 <- '
-  n_trees ~~ sr
-  pcps1 ~~ pse
-  
-  n_trees ~ PC1_clima
-  pcps1 ~ PC1_clima + c.n_solo
-  log_biomass ~ n_trees + PC1_clima + c.n_solo
-'
-
-fit_H2 <- lavaan::sem(
-  H2,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_H2,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
-
-# CFI: 0.825
-
-# ---- H3: Environment & composition affect N. trees ---- 
-
-H3 <- '
-  pcps1 ~~ pse
-  
-  pcps1 ~ PC1_clima + c.n_solo
-  n_trees ~ PC1_clima + sr + pcps1 + c.n_solo
-    log_biomass ~ n_trees
-'
-
-fit_H3 <- lavaan::sem(
-  H3,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_H3,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
-
-# CFI: 0.465
-
-
-# ---- H4: Environment, composition, structure ---- 
-
-H4 <- '
-  pcps1 ~~ pse
-  n_trees ~~ sr
-  
-  n_trees ~ PC1nutri
-  pcps1 ~ PC1_clima
-  
-  log_biomass ~ n_trees + pcps1 + sr + pse + c.n_solo
-'
-
-fit_H4 <- lavaan::sem(
-  H4,
-  data = dados_scaled,
-  estimator = "ML"
-)
-
-summary(fit_H4,
-        standardized = TRUE,
-        fit.measures = TRUE,
-        rsquare = TRUE)
-
-# CFI: 0.893
-
-# sespd was 0.952
-
-# ---- piecewise ----
-
-# Pacotes
-library(piecewiseSEM)
-library(lme4)
-
-# 1. Submodels
-
-mod_n_trees <- m4 <- glm(n_trees ~ PC1nutri,
-                         data = dadosmisto,
-                         family = poisson)
-
-mod_pcps1 <- lmer(pcps1 ~ PC1_clima + (1 | site),
-                  data = dadosmisto,
-                  REML = FALSE)
-
-mod_biomass <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site),
-                    data = dadosmisto,
-                    REML = FALSE)
-
-# 2. Piecewise SEM
-
-sem_H4_pw <- psem(
-  mod_n_trees,
-  mod_pcps1,
-  mod_biomass
-)
-
-
-# 3. Resumo geral
-
-summary(sem_H4_pw)
-
-# 4. Coeficientes padronizados
-
-coefs(sem_H4_pw, standardize = "scale")
-
-# 5. R² dos submodelos
-
-rsquared(sem_H4_pw)
-
-# 6. Testes de independência
-
-dSep(sem_H4_pw)
-
-# 7. Ajuste global
-
-fisherC(sem_H4_pw)
-
-# 8. AIC do modelo
-
-AIC(sem_H4_pw)
-
-# ---- Testing ----
+# ---- Piecewise ----
 
 # Packages
 library(piecewiseSEM)
 library(lme4)
+library(MASS)
 
 # ---- HA ----
 
+# Climate and soil indirect trough diversity
+
 # 1. Submodels
 
-mod_n_trees <- glm(n_trees ~ PC1nutri,
-                   data = dadosmisto,
-                   family = poisson)
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
+)
 
-mod_pcps1 <- lmer(pcps1 ~ PC1_clima + (1 | site),
-                  data = dadosmisto,
-                  REML = FALSE)
+mod_pcps1 <- lmer(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB + (1 | site),
+  data = dadosmisto
+)
 
-mod_biomass <- lmer(log(biomassa_z_kg) ~ pcps1 + n_trees + c.n_solo + (1 | site),
-                    data = dadosmisto,
-                    REML = FALSE)
+mod_biomass <- lmer(
+  log_biomass ~ pcps1 + n_trees + sr + pse + (1 | site),
+  data = dadosmisto
+)
+
 
 # 2. Piecewise SEM
 
 sem_HA <- psem(
   mod_n_trees,
   mod_pcps1,
-  mod_biomass
+  mod_biomass,
+  data = dadosmisto
+)
+
+# Covariance
+
+sem_HA <- update(
+  sem_HA,
+  n_trees %~~% sr,
+  pcps1 %~~% pse
 )
 
 # 3. Summary
 
-summary(sem_HA, conserve = TRUE)
+summary(sem_HA)
 
-# 4. Standardized coefficients
+# ---- HA2 ----
 
-coefs(sem_HA, standardize = "scale")
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
+)
 
-# 5. R-squared
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
 
-rsquared(sem_HA)
+mod_biomass <- lmer(
+  log_biomass ~ pcps1 + n_trees + sr + pse + c.n_solo + PC2_ClimaB + (1 | site),
+  data = dadosmisto
+)
 
-# 6. Tests of independence
+# Piecewise SEM
 
-dSep(sem_HA, conserve = TRUE)
+sem_HA2 <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
 
-# 7. Global fit
+# Covariance
 
-fisherC(sem_HA, conserve = TRUE)
+sem_HA2 <- update(
+  sem_HA2,
+  c.n_solo %~~% PC1nutri,
+  n_trees %~~% sr,
+  pcps1 %~~% pse,
+  sr %~~% pcps1
+)
 
-# 8. AIC
+# Summmary
 
-AIC(sem_HA)
+summary(sem_HA2)
 
 
 # ---- HB ----
 
-# 1. Submodels
-
-mod_n_trees <- glm(n_trees ~ PC1nutri,
-                   data = dadosmisto,
-                   family = poisson)
-
-mod_biomass <- lmer(log(biomassa_z_kg) ~ PC1nutri + PC1_clima + n_trees + c.n_solo + (1 | site),
-                    data = dadosmisto,
-                    REML = FALSE)
-
-# 2. Piecewise SEM
-
-sem_HB <- psem(
-  mod_n_trees,
-  mod_biomass
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
 )
 
-# 3. Summary
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
 
-summary(sem_HB, conserve = TRUE)
+mod_biomass <- lmer(
+  log_biomass ~ pcps1 + n_trees + c.n_solo + sr + pse + (1 | site),
+  data = dadosmisto
+)
 
-# 4. Standardized coefficients
+# Piecewise SEM
 
-coefs(sem_HB, standardize = "scale")
+sem_HB <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
 
-# 5. R-squared
+# Covariance
 
-rsquared(sem_HB)
+sem_HB <- update(
+  sem_HB,
+  c.n_solo %~~% PC1nutri,
+  n_trees %~~% sr,
+  pcps1 %~~% pse,
+  pcps1 %~~% sr
+)
 
-# 6. Tests of independence
+# Summmary
 
-dSep(sem_HB, conserve = TRUE)
-
-# 7. Global fit
-
-fisherC(sem_HB, conserve = TRUE)
-
-# 8. AIC
-
-AIC(sem_HB)
+summary(sem_HB)
 
 
 # ---- HC ----
 
-# 1. Submodels
-
-mod_n_trees <- glm(n_trees ~ PC1nutri,
-                   data = dadosmisto,
-                   family = poisson)
-
-mod_pse <- lm(pse ~ season_ppt,
-              data = dadosmisto)
-
-mod_biomass <- lmer(log(biomassa_z_kg) ~ pse + n_trees + c.n_solo + (1 | site),
-                    data = dadosmisto,
-                    REML = FALSE)
-
-# 2. Piecewise SEM
-
-sem_HC <- psem(
-  mod_n_trees,
-  mod_pse,
-  mod_biomass
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
 )
 
-# 3. Summary
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
 
-summary(sem_HC, conserve = TRUE)
+mod_biomass <- lmer(
+  log_biomass ~ pcps1 + n_trees + PC1_ClimaA + PC2_ClimaB + sr + pse + (1 | site),
+  data = dadosmisto
+)
 
-# 4. Standardized coefficients
+# Piecewise SEM
 
-coefs(sem_HC, standardize = "scale")
+sem_HC <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
 
-# 5. R-squared
+# Covariance
 
-rsquared(sem_HC)
+sem_HC <- update(
+  sem_HC,
+  c.n_solo %~~% PC1nutri,
+  n_trees %~~% sr,
+  pcps1 %~~% pse,
+  sr %~~% pcps1
+)
 
-# 6. Tests of independence
+# Summmary
 
-dSep(sem_HC, conserve = TRUE)
-
-# 7. Global fit
-
-fisherC(sem_HC, conserve = TRUE)
-
-# 8. AIC
-
-AIC(sem_HC)
+summary(sem_HC)
 
 
 # ---- HD ----
 
-# 1. Submodels
-
-mod_n_trees <- glm(n_trees ~ PC1nutri,
-                   data = dadosmisto,
-                   family = poisson)
-
-mod_sr <- glm(sr ~ altitude,
-                   data = dadosmisto,
-                   family = poisson)
-
-mod_biomass <- lmer(log(biomassa_z_kg) ~ sr + n_trees + altitude + (1 | site),
-                    data = dadosmisto,
-                    REML = FALSE)
-
-# 2. Piecewise SEM
-
-sem_HD <- psem(
-  mod_n_trees,
-  mod_sr,
-  mod_biomass,
-  sr %~~% n_trees
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
 )
 
-# 3. Summary
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
 
-summary(sem_HD, conserve = TRUE)
+mod_biomass <- lmer(
+  log_biomass ~ PC1_ClimaA + PC2_ClimaB + PC1nutri + c.n_solo + (1 | site),
+  data = dadosmisto
+)
 
-# 4. Standardized coefficients
+# Piecewise SEM
 
-coefs(sem_HD, standardize = "scale")
+sem_HD <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
 
-# 5. R-squared
+# Covariance
 
-rsquared(sem_HD)
+sem_HD <- update(
+  sem_HD,
+  c.n_solo %~~% PC1nutri,
+  n_trees %~~% sr,
+  pcps1 %~~% pse,
+  sr %~~% pcps1
+)
 
-# 6. Tests of independence
+# Summmary
 
-dSep(sem_HD, conserve = TRUE)
+summary(sem_HD)
 
-# 7. Global fit
 
-fisherC(sem_HD, conserve = TRUE)
+# ---- HE ----
 
-# 8. AIC
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri + sr + pcps1 + c.n_solo,
+  data = dadosmisto
+)
 
-AIC(sem_HD)
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
+
+mod_biomass <- lmer(
+  log_biomass ~ n_trees + (1 | site),
+  data = dadosmisto
+)
+
+# Piecewise SEM
+
+sem_HE <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
+
+# Covariance
+
+sem_HE <- update(
+  sem_HE,
+  c.n_solo %~~% PC1nutri,
+  pcps1%~~%pse
+)
+
+# Summmary
+
+summary(sem_HE)
+
+
+# ---- HE2 ----
+
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri + sr,
+  data = dadosmisto
+)
+
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
+
+mod_biomass <- lmer(
+  log_biomass ~ n_trees + c.n_solo + pcps1 + (1 | site),
+  data = dadosmisto
+)
+
+# Piecewise SEM
+
+sem_HE2 <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
+
+# Covariance
+
+sem_HE2 <- update(
+  sem_HE2,
+  c.n_solo %~~% PC1nutri,
+  pse %~~% pcps1,
+  pcps1 %~~% sr
+)
+
+# Summmary
+
+summary(sem_HE2)
+
+
+# ---- HF ----
+
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
+
+mod_biomass <- lmer(
+  log_biomass ~ n_trees + sr + pcps1 + pse + (1 | site),
+  data = dadosmisto
+)
+
+mod_soil_cn <- lm(
+  c.n_solo ~ log_biomass,
+  data = dadosmisto
+)
+
+mod_soil_ions <- lm(
+  PC1nutri ~ log_biomass,
+  data = dadosmisto
+)
+
+# Piecewise SEM
+
+sem_HF <- psem(
+  mod_pcps1,
+  mod_biomass,
+  mod_soil_cn,
+  mod_soil_ions
+)
+
+# Covariance
+
+sem_HF <- update(
+  sem_HF,
+  pcps1 %~~% pse,
+  sr %~~% n_trees,
+  c.n_solo %~~% PC1nutri
+)
+
+# Summmary
+
+summary(sem_HF)
+
+
+# ---- Clean version ----
+
+# ---- H ----
+
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri + sr,
+  data = dadosmisto
+)
+
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA,
+  data = dadosmisto
+)
+
+mod_biomass <- lmer(
+  log_biomass ~ n_trees + c.n_solo + pcps1 + (1 | site),
+  data = dadosmisto
+)
+
+# Piecewise SEM
+
+sem_H <- psem(
+  mod_n_trees_nb,
+  mod_pcps1,
+  mod_biomass,
+  data = dadosmisto
+)
+
+# Covariance
+
+sem_H <- update(
+  sem_H,
+  c.n_solo %~~% PC1nutri,
+  sr %~~% pcps1
+)
+
+# Summmary
+
+summary(sem_H)
 

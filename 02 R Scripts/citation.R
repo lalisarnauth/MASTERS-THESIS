@@ -13,6 +13,7 @@ citation("corrplot")
 citation("lavaan")
 citation("lavaan")
 citation("lavaan")
+citation("piecewiseSEM")
 citation()
 R.version.string
 
