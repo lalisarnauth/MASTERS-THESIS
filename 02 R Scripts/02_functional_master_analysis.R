@@ -19,6 +19,7 @@ library(readxl)
 library(openxlsx)
 library(writexl)
 library(ggplot2)
+library(MuMIn)
 library(patchwork)   # to combine plots side by side
 library(ggeffects)
 library(webshot2)
@@ -335,278 +336,6 @@ dev.off()
 
 dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE)
 
-# Functional diversity
-
-fdis <- lm(log_biomass~fdis,data = dadosreg)
-summary(fdis) # p-value: 0.232     
-residuos_fdis <- residuals(produt.fdis)
-shapiro.test(residuos_fdis) #NORMAL
-
-fric <- lm(log_biomass~fric,data = dadosreg)
-summary(fric) # p-value: 0.944  
-residuos_fric <- residuals(produt.fric)
-shapiro.test(residuos_fric) #NORMAL
-
-fdiv <- lm(log_biomass~fdiv,data = dadosreg)
-summary(fdiv) # p-value: 0.459
-residuos_fdiv <- residuals(produt.fdiv)
-shapiro.test(residuos_fdiv) #NORMAL
-
-# With foliage results for C and N
-
-fdis <- lm(log_biomass~fdis2,data = dadosreg)
-summary(fdis) # p-value: 0.806         
-
-fric <- lm(log_biomass~fric2,data = dadosreg)
-summary(fric) # p-value: 0.0535 .  
-
-fdiv <- lm(log_biomass~fdiv2,data = dadosreg)
-summary(fdiv) # p-value: 0.722
-
-#
-
-cwm_wd <- lm(log_biomass~cwm_wd,data = dadosreg)
-summary(cwm_wd) # p-value: 0.234 
-residuos_cwm_wd <- residuals(produt.cwm_wd)
-shapiro.test(residuos_cwm_wd) #NORMAL
-
-cwm_sla <- lm(log_biomass~cwm_sla,data = dadosreg)
-summary(cwm_sla) # p-value: 0.537 
-residuos_cwm_sla <- residuals(produt.cwm_sla)
-shapiro.test(residuos_cwm_sla) #NORMAL
-
-cwm_ldmc <- lm(log_biomass~cwm_ldmc,data = dadosreg)
-summary(cwm_ldmc) # p-value: 0.0595 . 
-residuos_cwm_ldmc <- residuals(produt.cwm_ldmc)
-shapiro.test(residuos_cwm_ldmc) #NORMAL
-
-cwm_leafc <- lm(log_biomass~cwm_leafc,data = dadosreg)
-summary(cwm_leafc) # p-value: 0.0238 *
-residuos_cwm_leafc <- residuals(cwm_leafc)
-shapiro.test(residuos_cwm_leafc) #NORMAL
-
-cwm_leafn <- lm(log_biomass~cwm_leafn,data = dadosreg)
-summary(cwm_leafn) # p-value: 9.251e-05
-residuos_cwm_leafn <- residuals(cwm_leafn)
-shapiro.test(residuos_cwm_leafn) #NORMAL
-
-cwm_leafcn <- lm(log_biomass~cwm_leafcn,data = dadosreg)
-summary(cwm_leafcn) # p-value: 0.01504 *
-residuos_cwm_leafcn <- residuals(cwm_leafcn)
-shapiro.test(residuos_cwm_leafcn) #NORMAL
-
-cwm_leafp <- lm(log_biomass~cwm_leafp,data = dadosreg)
-summary(cwm_leafp) # p-value: 0.0564 .
-residuos_cwm_leafp <- residuals(cwm_leafp)
-shapiro.test(residuos_cwm_leafp) #NORMAL
-
-fdis_wd <- lm(log_biomass~fdis_wd,data = dadosreg)
-summary(fdis_wd) # p-value: 0.8 
-residuos_fdis_wd <- residuals(produt.fdis_wd)
-shapiro.test(residuos_fdis_wd) #NORMAL
-
-fric_wd <- lm(log_biomass~fric_wd,data = dadosreg)
-summary(produt.fric_wd) # p-value: 0.892
-residuos_fric_wd <- residuals(produt.fric_wd)
-shapiro.test(residuos_fric_wd) #NORMAL
-
-fdis_sla <- lm(log_biomass~fdis_sla,data = dadosreg)
-summary(fdis_sla) # p-value: 0.124
-residuos_fdis_sla <- residuals(produt.fdis_sla)
-shapiro.test(residuos_fdis_sla) #NORMAL
-
-fric_sla <- lm(log_biomass~fric_sla,data = dadosreg)
-summary(fric_sla) # p-value: 0.267 
-residuos_fric_sla <- residuals(produt.fric_sla)
-shapiro.test(residuos_fric_sla) #NORMAL
-
-fdis_ldmc <- lm(log_biomass~fdis_ldmc,data = dadosreg)
-summary(fdis_ldmc) # p-value: 0.0469 *
-residuos_fdis_ldmc <- residuals(produt.fdis_ldmc)
-shapiro.test(residuos_fdis_ldmc) #NORMAL
-
-fric_ldmc <- lm(log_biomass~fric_ldmc,data = dadosreg)
-summary(fric_ldmc) # p-value:  0.0399 * 
-residuos_fric_ldmc <- residuals(produt.fric_ldmc)
-shapiro.test(residuos_fric_ldmc) #NORMAL
-
-#
-
-fdis_leafc <- lm(log_biomass~fdis_leafc,data = dadosreg)
-summary(fdis_leafc) # p-value: 0.138
-residuos_fdis_leafc <- residuals(fdis_leafc)
-shapiro.test(residuos_fdis_leafc) #NORMAL
-
-fric_leafc <- lm(log_biomass~fric_leafc,data = dadosreg)
-summary(fric_leafc) # p-value:  0.149
-residuos_fric_leafc <- residuals(fric_leafc)
-shapiro.test(residuos_fric_leafc) #NORMAL
-
-fdis_leafn <- lm(log_biomass~fdis_leafn,data = dadosreg)
-summary(fdis_leafn) # p-value: 0.206
-residuos_fdis_leafc <- residuals(fdis_leafn)
-shapiro.test(residuos_fdis_leafn) #NORMAL
-
-fric_leafn <- lm(log_biomass~fric_leafn,data = dadosreg)
-summary(fric_leafn) # p-value:  0.852
-residuos_fric_leafn <- residuals(fric_leafn)
-shapiro.test(residuos_fric_leafn) #NORMAL
-
-fdis_leafp <- lm(log_biomass~fdis_leafp,data = dadosreg)
-summary(fdis_leafp) # p-value: 0.77
-residuos_fdis_leafp <- residuals(fdis_leafp)
-shapiro.test(residuos_fdis_leafp) #NORMAL
-
-fric_leafp <- lm(log_biomass~fric_leafp,data = dadosreg)
-summary(fric_leafp) # p-value:  0.6703
-residuos_fric_leafp <- residuals(fric_leafp)
-shapiro.test(residuos_fric_leafp) #NORMAL
-
-#
-
-fdis_cwm_wd <- lm(fdis_wd~cwm_wd,data = dadosreg)
-summary(fdis_cwm_wd) # p-value: 0.05865 .
-
-# Taxonomic diversity
-SR <- lm(log_biomass~SR,data = dadosreg)
-summary(SR) # p-value: 0.393
-residuos_sr <- residuals(SR)
-shapiro.test(residuos_sr) #NORMAL
-
-# Phylogenetic diversity
-
-SESPD <- lm(log_biomass~SESPD,data = dadosreg)
-summary(produt.SESPD) # p-value: 0.0497 * 
-residuos_SESPD <- residuals(produt.SESPD)
-shapiro.test(residuos_SESPD) #NORMAL
-
-SESMPD <- lm(log_biomass~SESMPD,data = dadosreg)
-summary(produt.SESMPD) # p-value: 0.187
-residuos_SESMPD <- residuals(produt.SESMPD)
-shapiro.test(residuos_SESMPD) #NORMAL
-
-SESMNTD <- lm(log_biomass~SESMNTD,data = dadosreg)
-summary(produt.SESMNTD) # p-value: 0.0331 *
-residuos_SESMNTD <- residuals(produt.SESMNTD)
-shapiro.test(residuos_SESMNTD) #NORMAL
-
-PSV <- lm(log_biomass~PSV,data = dadosreg)
-summary(produt.PSV) # p-value: 0.211
-residuos_PSV <- residuals(produt.PSV)
-shapiro.test(residuos_PSV) #NORMAL
-
-PSC <- lm(log_biomass~PSC,data = dadosreg)
-summary(produt.PSC) # p-value: 0.0456 * 
-
-PSEab <- lm(log_biomass~PSEab,data = dadosreg)
-summary(PSEab) # p-value: 0.105
-
-# Multiple variables
-
-t <- lm(log_biomass~cwm_ldmc+cwm_wd,data = dadosreg)
-summary(t) # p-value: 0.02186 *
-AICc(t)
-
-t2 <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
-summary(t2) # p-value = 0.07547
-
-# FDis only
-m_fdis <- lm(log_biomass ~ fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m_fdis) # p-value = 0.0176 *
-
-m_fdis <- lm(log_biomass ~ fdis_sla + fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m_fdis) #p=0.04034 *
-
-# FRic only
-m_fric <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
-summary(m_fric)
-
-# 2. Nonlinear (quadratic) test for FDis
-m_fdis_quad <- lm(log_biomass ~ cwm_ldmc + cwm_wd +
-                    fdis_ldmc + I(fdis_ldmc^2), data = dadosreg)
-summary(m_fdis_quad) # p-value: 0.08198
-
-### Decoupled ###
-
-dcF <- lm(log_biomass~dcF,data = dadosreg)
-summary(dcF) # p-value: 0.0379 *
-residuos_dcF <- residuals(produt.dcF)
-shapiro.test(residuos_dcF) #NORMAL
-
-dcP <- lm(log_biomass~dcP,data = dadosreg)
-summary(produt.dcP) # p-value: 0.432
-residuos_dcP <- residuals(produt.dcP)
-shapiro.test(residuos_dcP) #NORMAL
-
-s <- lm(log_biomass~cwm_ldmc+cwm_wd+dcF,data = dadosreg)
-summary(s)
-
-ss <- lm(log_biomass~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
-summary(ss)
-
-# test
-
-ntrees <- lm(log_biomass~n_trees, data = dadosreg)
-summary(ntrees) # p= 0.933
-
-ntrees <- lm(cwm_ldmc~n_trees, data = dadosreg)
-summary(ntrees) # p= 0.933
-
-
-# PCA Scores
-m_pca <- lm(log_biomass~ PC1 + PC2 + fric2, data = dadosreg)
-summary(m_pca) # p= 0.02186
-car::vif(m_pca)
-
-
-m1 <- lm(log_biomass~cwm_leafn + fric2, data = dadosreg)
-summary(m1) # p= 0.0176
-
-
-## Candidate models
-
-# Functional (dispersion)
-m1 <- lm(log_biomass~fdis_ldmc + fdis_wd, data = dadosreg)
-summary(m1) # p= 0.0176
-# ---- Selected model ----
-
-# CWM (identity)
-m2 <- lm(log_biomass~cwm_ldmc + cwm_wd, data = dadosreg)
-summary(m2) # p= 0.02186
-
-# Phylogenetic
-
-m3 <- lm(log_biomass~SESMNTD, data = dadosreg)
-summary(m3) # p= 0.0331
-
-m4 <- lm(log_biomass~PSC, data = dadosreg)
-summary(m4) # p= 0.04558
-
-model_selection <- model.sel(
-  m1 = m1,
-  m2 = m2,
-  m3 = m3,
-  m4 = m4,
-  rank = "AICc"
-)
-
-model_table <- as.data.frame(model_selection) %>%
-  mutate(Model = rownames(.)) %>%
-  select(Model, df, logLik, AICc, delta, weight)
-
-model_table
-
-model.avg(model_selection)
-sw(model_selection) # fdis_ldmc and fdis_wd have the largest Σwi (0.37 each)
-
-
-m <- lm(log_biomass~fdis_ldmc + fdis_wd + cwm_ldmc + cwm_wd, data = dadosreg)
-summary(m)
-
-vif(m)
-
-cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))
-
 #### Rao Melodic ####
 
 # All traits
@@ -661,7 +390,9 @@ options(na.action = "na.fail")
 global_H1 <- lm(
   log_biomass ~ 
     fdis2 + fric2 + fdiv2 +
-    raoq + Rao_phylo +
+    raoq + Rao_phylo + Rao_WD + Rao_SLA
+    + Rao_LDMC + Rao_leafC + Rao_leafN
+    + Rao_leafP + 
     fdis_wd + fdis_sla + fric_sla +
     fdis_ldmc + fric_ldmc +
     fdis_leafc + fric_leafc +
@@ -819,6 +550,13 @@ summary(mdiv3) # R2 = 0.05
 mdiv4 <- lm(log_biomass~Simpson, data = dadosreg)
 summary(mdiv4) # R2 = -0.04
 
+mdiv5 <- lm(log_biomass~raoq + Rao_phylo, data = dadosreg)
+summary(mdiv5) # R2 = 0.05
+
+mdiv6 <- lm(log_biomass~Rao_phylo + Simpson, data = dadosreg)
+summary(mdiv6) # R2 = 0.27
+
+
 # Identity
 
 mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
@@ -831,9 +569,15 @@ summary(mid2) # R2 =  0.19
 mid3 <- lm(log_biomass ~ PC2, data = dadosreg)
 summary(mid3) # R2 =  0.19
 
+mid4 <- lm(log_biomass ~ PC1 + PC2, data = dadosreg)
+summary(mid4) # R2 =  0.40
+
+mid5 <- lm(log_biomass ~ cwm_leafn + cwm_leafc, data = dadosreg)
+summary(mid5) # R2 =  0.40
+
 # Diversity and identity?
 
-mdiv.id <- lm(log_biomass~ Rao_LDMC + scalecwm_leafn, data = dadosreg)
+mdiv.id <- lm(log_biomass~ Rao_LDMC + cwm_leafn, data = dadosreg)
 summary(mdiv.id) # R2 = 0.59
 vif(mdiv.id)
 AICc(mdiv.id) # 28.4
@@ -841,9 +585,59 @@ AICc(mdiv.id) # 28.4
 mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1 + PC2, data = dadosreg)
 summary(mdiv.id2) # R2 = 0.46
 
-mdiv.id3 <- lm(log_biomass~ PC1 + PC2, data = dadosreg)
-summary(mdiv.id3) # R2 = 0.40
-AICc(mdiv.id3) # 36.9
+mdiv.id3 <- lm(log_biomass~ Simpson + cwm_leafn, data = dadosreg)
+summary(mdiv.id3) # R2 = 0.57
+AICc(mdiv.id3) # 29.03
+
+mdiv.id4 <- lm(log_biomass~ Rao_phylo + cwm_leafn, data = dadosreg)
+summary(mdiv.id4) # R2 = 0.51
+AICc(mdiv.id4) # 32.33
+
+mdiv.id5 <- lm(log_biomass~ Rao_LDMC + Rao_WD + cwm_leafn, data = dadosreg)
+summary(mdiv.id5) # R2 = 0.51
+vif(mdiv.id5)
+AICc(mdiv.id5) # 27.34613
+
+# ---- BIC Table ----
+
+# Create named list of models
+models <- list(
+  mdiv1 = mdiv1,
+  mdiv2 = mdiv2,
+  mdiv3 = mdiv3,
+  mdiv4 = mdiv4,
+  mdiv5 = mdiv5,
+  mdiv6 = mdiv6,
+  
+  mid1 = mid1,
+  mid2 = mid2,
+  mid3 = mid3,
+  mid4 = mid4,
+  mid5 = mid5,
+  
+  mdiv.id  = mdiv.id,
+  mdiv.id2 = mdiv.id2,
+  mdiv.id3 = mdiv.id3,
+  mdiv.id4 = mdiv.id4,
+  mdiv.id5 = mdiv.id5
+)
+
+# Extract BIC, AICc and R2
+model_comp <- data.frame(
+  Model = names(models),
+  BIC   = sapply(models, BIC),
+  AIC   = sapply(models, AIC),
+  R2    = sapply(models, function(x) summary(x)$r.squared),
+  npar  = sapply(models, function(x) length(coef(x)))
+)
+
+# Delta BIC 
+model_comp <- model_comp %>%
+  arrange(BIC) %>%
+  mutate(delta_BIC = BIC - min(BIC))
+
+# ---- View BIC table ----
+model_comp
 
 # ---- Is PD a good proxy for Functional composition? Could PD be used to assess ecosystem function? 
 
@@ -946,62 +740,48 @@ library(officer) # save word
 
 # Diversity
 mdiv1 <- lm(log_biomass ~ Rao_LDMC + Rao_WD, data = dadosreg)
-mdiv2 <- lm(log_biomass ~ raoq, data = dadosreg)
-mdiv3 <- lm(log_biomass ~ Rao_phylo, data = dadosreg)
-mdiv4 <- lm(log_biomass ~ Simpson, data = dadosreg)
+mdiv5 <- lm(log_biomass~raoq + Rao_phylo, data = dadosreg)
+mdiv6 <- lm(log_biomass~Rao_phylo + Simpson, data = dadosreg)
 
 # Identity
 mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
-mid2 <- lm(log_biomass ~ PC1, data = dadosreg)
-mid3 <- lm(log_biomass ~ PC2, data = dadosreg)
+mid4 <- lm(log_biomass ~ PC1 + PC2, data = dadosreg)
 
 # Diversity + Identity
 mdiv.id  <- lm(log_biomass ~ Rao_LDMC + cwm_leafn, data = dadosreg)
-mdiv.id2 <- lm(log_biomass ~ Rao_LDMC + PC1 + PC2, data = dadosreg)
-mdiv.id3 <- lm(log_biomass ~ Rao_LDMC + PC1, data = dadosreg)
+mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1, data = dadosreg)
+mdiv.id3 <- lm(log_biomass~ Simpson + cwm_leafn, data = dadosreg)
+mdiv.id4 <- lm(log_biomass~ Rao_phylo + cwm_leafn, data = dadosreg)
+mdiv.id5  <- lm(log_biomass ~ Rao_LDMC + Rao_WD + cwm_leafn, data = dadosreg)
 
 # Organize models
 
 models <- list(
   "Rao_LDMC + Rao_WD"      = mdiv1,
-  "RaoQ"                   = mdiv2,
-  "Rao phylogenetic"       = mdiv3,
-  "Simpson"                = mdiv4,
+  "RaoQ + Rao phylo"       = mdiv5,
+  "Rao phylo + Simpson"    = mdiv6,
   "CWM Leaf N"             = mid1,
-  "PC1"                    = mid2,
-  "PC2"                    = mid3,
+  "PC1 + PC2"              = mid4,
   "Rao_LDMC + CWM Leaf N"  = mdiv.id,
-  "Rao_LDMC + PC1 + PC2"   = mdiv.id2,
-  "Rao_LDMC + PC1"         = mdiv.id3
+  "Rao_LDMC + PC1"         = mdiv.id2,
+  "Simpson + CWM Leaf N"   = mdiv.id3,
+  "Rao phylo + CWM Leaf N" = mdiv.id4,
+  "Rao_LDMC + Rao_WD + CWM Leaf N" = mdiv.id5
 )
 
 model_type <- c(
   "Rao_LDMC + Rao_WD"      = "Diversity",
-  "RaoQ"                   = "Diversity",
-  "Rao phylogenetic"       = "Diversity",
-  "Simpson"                = "Diversity",
+  "RaoQ + Rao phylo"       = "Diversity",
+  "Rao phylo + Simpson"    = "Diversity",
   "CWM Leaf N"             = "Identity",
-  "PC1"                    = "Identity",
-  "PC2"                    = "Identity",
+  "PC1 + PC2"              = "Identity",
   "Rao_LDMC + CWM Leaf N"  = "Diversity + Identity",
-  "Rao_LDMC + PC1 + PC2"   = "Diversity + Identity",
-  "Rao_LDMC + PC1"         = "Diversity + Identity"
+  "Rao_LDMC + PC1"         = "Diversity + Identity",
+  "Simpson + CWM Leaf N"   = "Diversity + Identity",
+  "Rao phylo + CWM Leaf N" = "Diversity + Identity",
+  "Rao_LDMC + Rao_WD + CWM Leaf N" = "Diversity + Identity"
 )
 
-# Pretty model formulas
-
-model_forms <- c(
-  "Rao_LDMC + Rao_WD"      = "log_biomass = β0 + β1 Rao LDMC + β2 Rao WD",
-  "RaoQ"                   = "log_biomass = β0 + β1 RaoQ",
-  "Rao phylogenetic"       = "log_biomass = β0 + β1 Rao phylogenetic",
-  "Simpson"                = "log_biomass = β0 + β1 Simpson",
-  "CWM Leaf N"             = "log_biomass = β0 + β1 CWM Leaf N",
-  "PC1"                    = "log_biomass = β0 + β1 PC1",
-  "PC2"                    = "log_biomass = β0 + β1 PC2",
-  "Rao_LDMC + CWM Leaf N"  = "log_biomass = β0 + β1 Rao LDMC + β2 CWM Leaf N",
-  "Rao_LDMC + PC1 + PC2"   = "log_biomass = β0 + β1 Rao LDMC + β2 PC1 + β3 PC2",
-  "Rao_LDMC + PC1"              = "log_biomass = β0 + β1 Rao_LDMC + β2 PC2"
-)
 
 # Pretty predictor names
 
@@ -1078,13 +858,13 @@ tab_list <- lapply(names(models), function(mod_name) {
   
   metrics <- model_metrics %>% filter(Model_name == mod_name)
   
+
   model_row <- data.frame(
     `Model type` = model_type[mod_name],
-    `Model form` = model_forms[mod_name],
     `Predictor variables` = "Model",
     Slope = "",
     P = format_p(metrics$Model_P),
-    N = metrics$N,
+    N = as.character(metrics$N),
     R2 = sprintf("%.2f", metrics$R2),
     AICc = sprintf("%.2f", metrics$AICc),
     deltaAICc = sprintf("%.2f", metrics$deltaAICc),
@@ -1093,7 +873,6 @@ tab_list <- lapply(names(models), function(mod_name) {
   
   predictor_rows <- data.frame(
     `Model type` = "",
-    `Model form` = "",
     `Predictor variables` = coefs$`Predictor variables`,
     Slope = coefs$Slope,
     P = coefs$P,
@@ -1104,9 +883,11 @@ tab_list <- lapply(names(models), function(mod_name) {
     stringsAsFactors = FALSE
   )
   
+
   bind_rows(model_row, predictor_rows)
 })
 
+#
 results_table <- bind_rows(tab_list)
 
 # Order by AICc
@@ -1201,7 +982,77 @@ plot(vp,
      cex = 1.2)
 dev.off()
 
-# Species selection
+# ---- Proportional Variance partition ----
+
+mdiv.id <- lm(log_biomass ~ Rao_LDMC + Rao_WD + cwm_leafn, data = dadosreg)
+summary(mdiv.id)
+
+library(vegan)
+library(eulerr)
+
+# Response
+Y <- data.frame(log_biomass = dadosreg$log_biomass)
+
+# Functional diversity (FD)
+FD <- data.frame(
+  Rao_LDMC = dadosreg$Rao_LDMC,
+  Rao_WD   = dadosreg$Rao_WD
+)
+
+# Identity (ID)
+ID <- data.frame(
+  cwm_leafn = dadosreg$cwm_leafn
+)
+
+# Variance partitioning
+vp <- varpart(Y, FD, ID)
+
+# See fractions
+vp
+vp$part$indfract
+
+# Extract adjusted fractions
+fr <- as.data.frame(vp$part$indfract)
+fr
+
+a <- as.numeric(fr["[a] = X1|X2", "Adj.R.squared"])
+b <- as.numeric(fr["[b] = X2|X1", "Adj.R.squared"])
+c <- as.numeric(fr["[c]",         "Adj.R.squared"])
+
+a; b; c
+is.numeric(a); is.numeric(b); is.numeric(c)
+
+# Proportional diagram
+
+fit <- euler(c(
+  "FD" = a,
+  "Identity" = b,
+  "FD&Identity" = c
+))
+
+# Plot
+
+jpeg("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/varpart_plot_proportional.jpeg",
+     width = 1900, height = 1550, res = 300)
+
+plot(
+  fit,
+  fills = list(fill = c("lightblue", "mistyrose"), alpha = 0.6),
+  edges = list(col = "grey30"),
+  labels = list(font = 2, cex = 1.4),
+  quantities = list(
+    labels = c(
+      paste0(round(a * 100, 1), "%"),
+      paste0(round(b * 100, 1), "%"),
+      paste0(round(c * 100, 1), "%")
+    ),
+    cex = 1.2
+  )
+)
+
+dev.off()
+
+# ---- Species selection - Laughlin ----
 
 library(Select)
 
@@ -2519,3 +2370,461 @@ write.csv(
   "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
   row.names = F
 )
+
+# ---- PCPS ----
+
+
+# input the sample species list without CSA
+example <- read.csv("01 Datasets/01_raw_data/filogenia_ml_regua.csv")
+
+### generate a phylogeny for the sample species list
+tree <- phylo.maker(example, tree = GBOTB.extended.TPL,output.sp.list = TRUE,nodes = nodes.info.1.TPL, scenarios="S3")
+tree_ok <- tree$scenario.3
+
+phylo.dissim = cophenetic(tree_ok)
+std.pdis = (phylo.dissim-min(phylo.dissim))/(max(phylo.dissim)-min(phylo.dissim))
+pdis.ord = std.pdis[order(row.names(std.pdis)), order(row.names(std.pdis))]
+
+# install.packages("PCPS")
+library(PCPS)
+
+### Importing the family groups
+# Define Phylogenetic groups
+grupos <- example$family
+
+# Importing the community matrix
+com_total
+
+setdiff(colnames(com_total), colnames(pdis.ord))
+setdiff(colnames(pdis.ord), colnames(com_total))
+colnames(com_total) <- gsub(" ", "_", colnames(com_total))
+
+# Running PCPS
+res <- pcps(com_total, pdis.ord)
+summary(res)
+
+# Calculating explained variance
+eig <- res$values$Eigenvalue
+var_exp <- eig / sum(eig)
+pcps1_var <- round(var_exp[1] * 100, 2)
+pcps2_var <- round(var_exp[2] * 100, 2)
+
+# Scores for sites and species
+scores_pcps <- scores.pcps(res, choice = c(1,2))
+scores_sites <- scores_pcps$scores.sites
+scores_species <- scores_pcps$scores.species
+
+# Group arrows (families)
+grupos <- example$family
+apg_arrows <- apply(scores_species, 2, function(x) tapply(x, list(grupos), mean)) %>%
+  as.data.frame()
+apg_arrows$angle <- atan2(apg_arrows$pcps.1, apg_arrows$pcps.2) * (180/pi)
+apg_arrows$labels <- c("Anac","Aster", "Canna", "Caric", "Faba", "Lami", "Malva", "Melast", "Petive","Primula","Verbe")
+
+# Merging the data into a single data.frame
+df_plot <- cbind(as.data.frame(scores_sites),
+                 Biomass = dadosreg$log_biomass,
+                 raoq = dadosreg$raoq,
+                 Rao_phylo = dadosreg$Rao_phylo,
+                 cwm_leafN = dadosreg$cwm_leafn)
+
+### only biomass
+
+ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
+  
+  geom_point(color = "black", size = 4.5, alpha = 0.6) +
+  
+  geom_point(aes(color = Biomass), size = 4) +
+  
+  scale_colour_gradientn(
+    colors = c("black", "lightyellow", "red"),
+    name = "Aboveground \nBiomass (kg)"
+  ) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  
+  labs(
+    x = paste0("PCPS1 (", pcps1_var, "%)"),
+    y = paste0("PCPS2 (", pcps2_var, "%)")
+  ) +
+  
+  geom_label(
+    data = apg_arrows,
+    aes(x = pcps.1, y = pcps.2, label = labels),
+    fontface = "bold", fill = "grey", alpha = 0.5,
+    color = "black", size = 5
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black", linewidth = 0.8),
+    axis.text = element_text(size = 13),
+    axis.title = element_text(size = 16),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 15)
+  )
+
+ggsave("~/01 Masters_LA/06 Figures/02 plots/pcps_oficial.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+
+### cwm leaf n
+
+ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
+  
+  geom_point(color = "black", size = 4.5, alpha = 0.6) +
+  
+  geom_point(aes(color = cwm_leafN), size = 4) +
+  
+  scale_colour_gradientn(
+    colors = c("black", "lightyellow", "red"),
+    name = "CWM Leaf N"
+  ) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  
+  labs(
+    x = paste0("PCPS1 (", pcps1_var, "%)"),
+    y = paste0("PCPS2 (", pcps2_var, "%)")
+  ) +
+  
+  geom_label(
+    data = apg_arrows,
+    aes(x = pcps.1, y = pcps.2, label = labels),
+    fontface = "bold", fill = "grey", alpha = 0.5,
+    color = "black", size = 5
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black", linewidth = 0.8),
+    axis.text = element_text(size = 13),
+    axis.title = element_text(size = 16),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 15)
+  )
+
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/pcps_cwmleafn.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+
+# Biomass and CWM Leaf N
+
+ggplot(data = df_plot, aes(x = pcps.1, y = pcps.2)) +
+  
+  geom_point(aes(size = Biomass),
+             color = "black", alpha = 0.6) +
+  
+  geom_point(aes(color = cwm_leafN, size = Biomass)) +
+  
+  scale_colour_gradientn(
+    colors = c("black", "lightyellow", "red"),
+    name = "CWM Leaf N"
+  ) +
+  
+  scale_size_continuous(
+    name = "Log Biomass",
+    range = c(3, 8)
+  ) +
+  
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  
+  labs(
+    x = paste0("PCPS1 (", pcps1_var, "%)"),
+    y = paste0("PCPS2 (", pcps2_var, "%)")
+  ) +
+  
+  geom_label(
+    data = apg_arrows,
+    aes(x = pcps.1, y = pcps.2, label = labels),
+    fontface = "bold", fill = "grey", alpha = 0.5,
+    color = "black", size = 5
+  ) +
+  
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    axis.line = element_line(color = "black", linewidth = 0.8),
+    axis.text = element_text(size = 13),
+    axis.title = element_text(size = 16),
+    legend.title = element_text(size = 16),
+    legend.text = element_text(size = 15)
+  )
+
+ggsave("~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/pcps_Biomass_leafn.jpeg", width = 15, height = 10, dpi = 300, units = "in")
+
+
+# ---- OLD GLMS ----
+
+# Functional diversity
+
+fdis <- lm(log_biomass~fdis,data = dadosreg)
+summary(fdis) # p-value: 0.232     
+residuos_fdis <- residuals(produt.fdis)
+shapiro.test(residuos_fdis) #NORMAL
+
+fric <- lm(log_biomass~fric,data = dadosreg)
+summary(fric) # p-value: 0.944  
+residuos_fric <- residuals(produt.fric)
+shapiro.test(residuos_fric) #NORMAL
+
+fdiv <- lm(log_biomass~fdiv,data = dadosreg)
+summary(fdiv) # p-value: 0.459
+residuos_fdiv <- residuals(produt.fdiv)
+shapiro.test(residuos_fdiv) #NORMAL
+
+# With foliage results for C and N
+
+fdis <- lm(log_biomass~fdis2,data = dadosreg)
+summary(fdis) # p-value: 0.806         
+
+fric <- lm(log_biomass~fric2,data = dadosreg)
+summary(fric) # p-value: 0.0535 .  
+
+fdiv <- lm(log_biomass~fdiv2,data = dadosreg)
+summary(fdiv) # p-value: 0.722
+
+#
+
+cwm_wd <- lm(log_biomass~cwm_wd,data = dadosreg)
+summary(cwm_wd) # p-value: 0.234 
+residuos_cwm_wd <- residuals(produt.cwm_wd)
+shapiro.test(residuos_cwm_wd) #NORMAL
+
+cwm_sla <- lm(log_biomass~cwm_sla,data = dadosreg)
+summary(cwm_sla) # p-value: 0.537 
+residuos_cwm_sla <- residuals(produt.cwm_sla)
+shapiro.test(residuos_cwm_sla) #NORMAL
+
+cwm_ldmc <- lm(log_biomass~cwm_ldmc,data = dadosreg)
+summary(cwm_ldmc) # p-value: 0.0595 . 
+residuos_cwm_ldmc <- residuals(produt.cwm_ldmc)
+shapiro.test(residuos_cwm_ldmc) #NORMAL
+
+cwm_leafc <- lm(log_biomass~cwm_leafc,data = dadosreg)
+summary(cwm_leafc) # p-value: 0.0238 *
+residuos_cwm_leafc <- residuals(cwm_leafc)
+shapiro.test(residuos_cwm_leafc) #NORMAL
+
+cwm_leafn <- lm(log_biomass~cwm_leafn,data = dadosreg)
+summary(cwm_leafn) # p-value: 9.251e-05
+residuos_cwm_leafn <- residuals(cwm_leafn)
+shapiro.test(residuos_cwm_leafn) #NORMAL
+
+cwm_leafcn <- lm(log_biomass~cwm_leafcn,data = dadosreg)
+summary(cwm_leafcn) # p-value: 0.01504 *
+residuos_cwm_leafcn <- residuals(cwm_leafcn)
+shapiro.test(residuos_cwm_leafcn) #NORMAL
+
+cwm_leafp <- lm(log_biomass~cwm_leafp,data = dadosreg)
+summary(cwm_leafp) # p-value: 0.0564 .
+residuos_cwm_leafp <- residuals(cwm_leafp)
+shapiro.test(residuos_cwm_leafp) #NORMAL
+
+fdis_wd <- lm(log_biomass~fdis_wd,data = dadosreg)
+summary(fdis_wd) # p-value: 0.8 
+residuos_fdis_wd <- residuals(produt.fdis_wd)
+shapiro.test(residuos_fdis_wd) #NORMAL
+
+fric_wd <- lm(log_biomass~fric_wd,data = dadosreg)
+summary(produt.fric_wd) # p-value: 0.892
+residuos_fric_wd <- residuals(produt.fric_wd)
+shapiro.test(residuos_fric_wd) #NORMAL
+
+fdis_sla <- lm(log_biomass~fdis_sla,data = dadosreg)
+summary(fdis_sla) # p-value: 0.124
+residuos_fdis_sla <- residuals(produt.fdis_sla)
+shapiro.test(residuos_fdis_sla) #NORMAL
+
+fric_sla <- lm(log_biomass~fric_sla,data = dadosreg)
+summary(fric_sla) # p-value: 0.267 
+residuos_fric_sla <- residuals(produt.fric_sla)
+shapiro.test(residuos_fric_sla) #NORMAL
+
+fdis_ldmc <- lm(log_biomass~fdis_ldmc,data = dadosreg)
+summary(fdis_ldmc) # p-value: 0.0469 *
+residuos_fdis_ldmc <- residuals(produt.fdis_ldmc)
+shapiro.test(residuos_fdis_ldmc) #NORMAL
+
+fric_ldmc <- lm(log_biomass~fric_ldmc,data = dadosreg)
+summary(fric_ldmc) # p-value:  0.0399 * 
+residuos_fric_ldmc <- residuals(produt.fric_ldmc)
+shapiro.test(residuos_fric_ldmc) #NORMAL
+
+#
+
+fdis_leafc <- lm(log_biomass~fdis_leafc,data = dadosreg)
+summary(fdis_leafc) # p-value: 0.138
+residuos_fdis_leafc <- residuals(fdis_leafc)
+shapiro.test(residuos_fdis_leafc) #NORMAL
+
+fric_leafc <- lm(log_biomass~fric_leafc,data = dadosreg)
+summary(fric_leafc) # p-value:  0.149
+residuos_fric_leafc <- residuals(fric_leafc)
+shapiro.test(residuos_fric_leafc) #NORMAL
+
+fdis_leafn <- lm(log_biomass~fdis_leafn,data = dadosreg)
+summary(fdis_leafn) # p-value: 0.206
+residuos_fdis_leafc <- residuals(fdis_leafn)
+shapiro.test(residuos_fdis_leafn) #NORMAL
+
+fric_leafn <- lm(log_biomass~fric_leafn,data = dadosreg)
+summary(fric_leafn) # p-value:  0.852
+residuos_fric_leafn <- residuals(fric_leafn)
+shapiro.test(residuos_fric_leafn) #NORMAL
+
+fdis_leafp <- lm(log_biomass~fdis_leafp,data = dadosreg)
+summary(fdis_leafp) # p-value: 0.77
+residuos_fdis_leafp <- residuals(fdis_leafp)
+shapiro.test(residuos_fdis_leafp) #NORMAL
+
+fric_leafp <- lm(log_biomass~fric_leafp,data = dadosreg)
+summary(fric_leafp) # p-value:  0.6703
+residuos_fric_leafp <- residuals(fric_leafp)
+shapiro.test(residuos_fric_leafp) #NORMAL
+
+#
+
+fdis_cwm_wd <- lm(fdis_wd~cwm_wd,data = dadosreg)
+summary(fdis_cwm_wd) # p-value: 0.05865 .
+
+# Taxonomic diversity
+SR <- lm(log_biomass~SR,data = dadosreg)
+summary(SR) # p-value: 0.393
+residuos_sr <- residuals(SR)
+shapiro.test(residuos_sr) #NORMAL
+
+# Phylogenetic diversity
+
+SESPD <- lm(log_biomass~SESPD,data = dadosreg)
+summary(produt.SESPD) # p-value: 0.0497 * 
+residuos_SESPD <- residuals(produt.SESPD)
+shapiro.test(residuos_SESPD) #NORMAL
+
+SESMPD <- lm(log_biomass~SESMPD,data = dadosreg)
+summary(produt.SESMPD) # p-value: 0.187
+residuos_SESMPD <- residuals(produt.SESMPD)
+shapiro.test(residuos_SESMPD) #NORMAL
+
+SESMNTD <- lm(log_biomass~SESMNTD,data = dadosreg)
+summary(produt.SESMNTD) # p-value: 0.0331 *
+residuos_SESMNTD <- residuals(produt.SESMNTD)
+shapiro.test(residuos_SESMNTD) #NORMAL
+
+PSV <- lm(log_biomass~PSV,data = dadosreg)
+summary(produt.PSV) # p-value: 0.211
+residuos_PSV <- residuals(produt.PSV)
+shapiro.test(residuos_PSV) #NORMAL
+
+PSC <- lm(log_biomass~PSC,data = dadosreg)
+summary(produt.PSC) # p-value: 0.0456 * 
+
+PSEab <- lm(log_biomass~PSEab,data = dadosreg)
+summary(PSEab) # p-value: 0.105
+
+# Multiple variables
+
+t <- lm(log_biomass~cwm_ldmc+cwm_wd,data = dadosreg)
+summary(t) # p-value: 0.02186 *
+AICc(t)
+
+t2 <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fdis_ldmc + fric_ldmc, data = dadosreg)
+summary(t2) # p-value = 0.07547
+
+# FDis only
+m_fdis <- lm(log_biomass ~ fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m_fdis) # p-value = 0.0176 *
+
+m_fdis <- lm(log_biomass ~ fdis_sla + fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m_fdis) #p=0.04034 *
+
+# FRic only
+m_fric <- lm(log_biomass ~ cwm_ldmc + cwm_wd + fric_ldmc, data = dadosreg)
+summary(m_fric)
+
+# 2. Nonlinear (quadratic) test for FDis
+m_fdis_quad <- lm(log_biomass ~ cwm_ldmc + cwm_wd +
+                    fdis_ldmc + I(fdis_ldmc^2), data = dadosreg)
+summary(m_fdis_quad) # p-value: 0.08198
+
+### Decoupled ###
+
+dcF <- lm(log_biomass~dcF,data = dadosreg)
+summary(dcF) # p-value: 0.0379 *
+residuos_dcF <- residuals(produt.dcF)
+shapiro.test(residuos_dcF) #NORMAL
+
+dcP <- lm(log_biomass~dcP,data = dadosreg)
+summary(produt.dcP) # p-value: 0.432
+residuos_dcP <- residuals(produt.dcP)
+shapiro.test(residuos_dcP) #NORMAL
+
+s <- lm(log_biomass~cwm_ldmc+cwm_wd+dcF,data = dadosreg)
+summary(s)
+
+ss <- lm(log_biomass~cwm_ldmc+cwm_wd+dcP,data = dadosreg)
+summary(ss)
+
+# test
+
+ntrees <- lm(log_biomass~n_trees, data = dadosreg)
+summary(ntrees) # p= 0.933
+
+ntrees <- lm(cwm_ldmc~n_trees, data = dadosreg)
+summary(ntrees) # p= 0.933
+
+
+# PCA Scores
+m_pca <- lm(log_biomass~ PC1 + PC2 + fric2, data = dadosreg)
+summary(m_pca) # p= 0.02186
+car::vif(m_pca)
+
+
+m1 <- lm(log_biomass~cwm_leafn + fric2, data = dadosreg)
+summary(m1) # p= 0.0176
+
+
+## Candidate models
+
+# Functional (dispersion)
+m1 <- lm(log_biomass~fdis_ldmc + fdis_wd, data = dadosreg)
+summary(m1) # p= 0.0176
+# ---- old Selected model ----
+
+# CWM (identity)
+m2 <- lm(log_biomass~cwm_ldmc + cwm_wd, data = dadosreg)
+summary(m2) # p= 0.02186
+
+# Phylogenetic
+
+m3 <- lm(log_biomass~SESMNTD, data = dadosreg)
+summary(m3) # p= 0.0331
+
+m4 <- lm(log_biomass~PSC, data = dadosreg)
+summary(m4) # p= 0.04558
+
+model_selection <- model.sel(
+  m1 = m1,
+  m2 = m2,
+  m3 = m3,
+  m4 = m4,
+  rank = "AICc"
+)
+
+model_table <- as.data.frame(model_selection) %>%
+  mutate(Model = rownames(.)) %>%
+  select(Model, df, logLik, AICc, delta, weight)
+
+model_table
+
+model.avg(model_selection)
+sw(model_selection) # fdis_ldmc and fdis_wd have the largest Σwi (0.37 each)
+
+
+m <- lm(log_biomass~fdis_ldmc + fdis_wd + cwm_ldmc + cwm_wd, data = dadosreg)
+summary(m)
+
+vif(m)
+
+cor(dadosreg |> select(fdis_ldmc,fdis_wd,cwm_ldmc,cwm_wd))

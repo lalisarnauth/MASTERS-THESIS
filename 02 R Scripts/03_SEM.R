@@ -8,6 +8,8 @@ library(piecewiseSEM)
 library(lme4)
 library(MASS)
 
+dadosmisto <- read.csv("01 Datasets/01_raw_data/dadosmisto.csv",header = TRUE,row.names = 1)
+
 # ---- HA ----
 
 # Climate and soil indirect trough diversity
@@ -378,4 +380,21 @@ sem_H <- update(
 # Summmary
 
 summary(sem_H)
+
+# ---- HB ----
+
+mod_n_trees_nb <- glm.nb(
+  n_trees ~ PC1nutri+ c.n_solo,
+  data = dadosmisto
+)
+
+mod_pcps1 <- lm(
+  pcps1 ~ PC1_ClimaA + PC2_ClimaB,
+  data = dadosmisto
+)
+
+mod_biomass <- lmer(
+  log_biomass ~ pcps1 + n_trees + c.n_solo + sr + pse + PC2_ClimaB + (1 | site),
+  data = dadosmisto
+)
 

@@ -1,8 +1,6 @@
 
-# ------------------------------------------
 # PCA - Granulometry
 # Laíla Iglesias
-# ------------------------------------------
 
 library(readxl)
 library(dplyr)
