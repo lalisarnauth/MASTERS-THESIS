@@ -17,3 +17,6 @@ citation("piecewiseSEM")
 citation()
 R.version.string
 
+print(citation("FD"), bibtex=TRUE)
+Select
+citation("Select")

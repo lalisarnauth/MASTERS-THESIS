@@ -598,6 +598,9 @@ summary(mdiv.id5) # R2 = 0.51
 vif(mdiv.id5)
 AICc(mdiv.id5) # 27.34613
 
+mdiv.id6 <- lm(log_biomass~ PC1 + PC2, data = dadosreg)
+summary(mdiv.id6) # R2 = 0.46
+
 # ---- BIC Table ----
 
 # Create named list of models
@@ -1087,7 +1090,7 @@ out <- data.frame(
   LDMC = traits$LDMC
 )
 
-# ordenar do mais importante pro menos
+# sort from most important to least important
 out <- out[order(out$prob, decreasing = TRUE), ]
 
 out

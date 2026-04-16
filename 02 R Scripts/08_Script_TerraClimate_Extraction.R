@@ -1,8 +1,7 @@
 
-###############################################
 ### ENVIRONMENTAL DATA EXTRACTION - TerraClimate
 ### Averaged for each site (2018–2022)
-###############################################
+
 
 # ppt = precipitation (mm); pet = potential evapotranspiration (mm); tmax (monthly mean) = maximum temperature (ºC); tmin (monthly mean) = minimum temperature (ºC); vpd (monthly mean) = Vapor Pressure Deficit (kpd)
 
@@ -76,4 +75,70 @@ writexl::write_xlsx(
   "01 Datasets/02_processed_data/amb_TerraClimate_means_2018_2022.xlsx"
 )
 
+# ---- Anual PPT ----
 
+### Annual precipitation (ppt) averaged per site (2018–2022)
+
+library(ncdf4)
+library(raster)
+library(readxl)
+library(writexl)
+library(dplyr)
+library(tibble)
+
+# Base folder containing TerraClimate rasters
+tc_path <- "~/01 Masters_LA/07_environ_data_TerraClimate"
+
+# Load site coordinates
+sites <- read_excel("~/01 Masters_LA/04 Maps/moderadores.xlsx")
+
+# Spatial extent to crop rasters
+roi_extent <- extent(-44.608007, -40.974161, -22.859079, -21.272083)
+
+# ---- Load ppt rasters ----
+ppt_stack <- stack(list.files(
+  tc_path,
+  pattern = "TerraClimate_ppt",
+  full.names = TRUE
+))
+
+# ---- Rename layers (month_year) ----
+names(ppt_stack) <- apply(
+  expand.grid(month = 1:12, year = 2018:2022),
+  1,
+  FUN = function(x) paste(x[1], x[2], sep = "_")
+)
+
+# ---- Crop rasters ----
+ppt_crop <- crop(ppt_stack, roi_extent)
+
+# ---- Extract values for each site ----
+ppt_values <- extract(ppt_crop, sites[, c("Longitude", "Latitude")])
+ppt_df <- as.data.frame(ppt_values)
+
+# ---- Calculate annual precipitation per year ----
+years <- 2018:2022
+
+ppt_annual_list <- lapply(years, function(y) {
+  cols_year <- grep(paste0("_", y, "$"), names(ppt_df))
+  rowSums(ppt_df[, cols_year], na.rm = TRUE)
+})
+
+# Combine into dataframe
+ppt_annual_df <- as.data.frame(do.call(cbind, ppt_annual_list))
+colnames(ppt_annual_df) <- paste0("ppt_", years)
+
+# ---- Calculate mean annual precipitation (2018–2022) ----
+mean_ppt_annual <- rowMeans(ppt_annual_df, na.rm = TRUE)
+
+# ---- Final dataset ----
+ppt_final <- bind_cols(
+  sites,
+  tibble(mean_ppt_annual = mean_ppt_annual)
+)
+
+# ---- Export ----
+write_xlsx(
+  ppt_final,
+  "01 Datasets/02_processed_data/ppt_annual_2018_2022.xlsx"
+)
