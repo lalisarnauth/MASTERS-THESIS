@@ -1,6 +1,6 @@
-################################
+
+
 ### PCA - FUNCTIONAL METRICS ###
-################################
 
 library(dplyr)
 library(ggplot2)
@@ -173,5 +173,92 @@ ggsave(
   path = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity",
   width = 9,      # ajuste se quiser maior ou menor
   height = 7,
+  dpi = 300
+)
+
+# --- CWM PCA 2 ----
+
+# Read data
+functional_data <- read.csv(
+  "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv",
+  header = TRUE
+)
+
+# Select variables
+vars_pca <- functional_data %>%
+  select(cwm_sla, cwm_ldmc, cwm_leafcn,cwm_wd,cwm_leafn)
+
+# PCA
+pca_res <- prcomp(vars_pca, scale. = TRUE)
+
+# Explained variance
+var_exp <- summary(pca_res)$importance[2, 1:2] * 100
+
+# Loadings table
+loadings <- data.frame(
+  pca_res$rotation[, 1:2],
+  Variable = rownames(pca_res$rotation)
+)
+
+# Rename variables (cleaner labels)
+loadings$Variable <- dplyr::recode(
+  loadings$Variable,
+  "cwm_sla"   = "SLA",
+  "cwm_ldmc"  = "LDMC",
+  "cwm_wd"    = "WD",
+  "cwm_leafcn" = "Leaf C:N",
+  "cwm_leafn" = "Leaf N")
+
+# Arrow scale factor
+arrow_scale <- 2.3
+
+# Plot
+p_pca <- ggplot() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.5) +
+  geom_segment(
+    data = loadings,
+    aes(
+      x = 0, y = 0,
+      xend = PC1 * arrow_scale,
+      yend = PC2 * arrow_scale
+    ),
+    arrow = arrow(length = unit(0.25, "cm")),
+    color = "grey30",
+    linewidth = 0.8
+  ) +
+  geom_text_repel(
+    data = loadings,
+    aes(
+      x = PC1 * arrow_scale,
+      y = PC2 * arrow_scale,
+      label = Variable
+    ),
+    size = 5,
+    color = "black",
+    box.padding = 0.35,
+    point.padding = 0.2,
+    segment.color = NA
+  ) +
+  theme_classic(base_size = 15) +
+  theme(
+    axis.title = element_text(size = 16),
+    axis.text = element_text(size = 13, color = "black"),
+    panel.border = element_blank()
+  ) +
+  labs(
+    x = paste0("PC1 (", round(var_exp[1], 0), "%)"),
+    y = paste0("PC2 (", round(var_exp[2], 0), "%)")
+  )
+
+p_pca
+
+# Save figure
+ggsave(
+  filename = "pca_functional_metrics.jpeg",
+  plot = p_pca,
+  path = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity",
+  width = 9,
+  height = 6,
   dpi = 300
 )

@@ -1252,6 +1252,15 @@ ggsave(
   dpi = 300
 )
 
+# ---- Summary ----
+
+df_num <- dadosmisto[sapply(dadosmisto, is.numeric)]
+
+summary_stats <- data.frame(
+  mean = sapply(df_num, mean, na.rm = TRUE),
+  sd   = sapply(df_num, sd, na.rm = TRUE)
+)
+
 # ---- PCPS - without CSA ----
 
 
