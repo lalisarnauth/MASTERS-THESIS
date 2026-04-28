@@ -533,7 +533,7 @@ vif(MH3)
 
 # ---- Diversity or identity? ----
 
-dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/dadosreg.csv", header = TRUE)
+dadosreg <- read.csv("~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/03_functional_processed_data/dadosreg.csv", header = TRUE)
 
 # Diversity
 
@@ -563,14 +563,14 @@ mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
 summary(mid1) # R2 = 0.50
 AICc(mid1) # 30.95
 
-mid2 <- lm(log_biomass ~ PC1, data = dadosreg)
-summary(mid2) # R2 =  0.19
+mid2 <- lm(log_biomass ~ PC1_CN, data = dadosreg)
+summary(mid2) # R2 =  0.10
 
-mid3 <- lm(log_biomass ~ PC2, data = dadosreg)
-summary(mid3) # R2 =  0.19
+mid3 <- lm(log_biomass ~ PC2_CN, data = dadosreg)
+summary(mid3) # R2 =  0.03
 
-mid4 <- lm(log_biomass ~ PC1 + PC2, data = dadosreg)
-summary(mid4) # R2 =  0.40
+mid4 <- lm(log_biomass ~ PC1_CN + PC2_CN, data = dadosreg)
+summary(mid4) # R2 =  0.14
 
 mid5 <- lm(log_biomass ~ cwm_leafn + cwm_leafc, data = dadosreg)
 summary(mid5) # R2 =  0.40
@@ -582,8 +582,9 @@ summary(mdiv.id) # R2 = 0.59
 vif(mdiv.id)
 AICc(mdiv.id) # 28.4
 
-mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1 + PC2, data = dadosreg)
-summary(mdiv.id2) # R2 = 0.46
+mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1_CN + PC2_CN, data = dadosreg)
+summary(mdiv.id2) # R2 = 0.26
+AICc(mdiv.id2) # 43.87
 
 mdiv.id3 <- lm(log_biomass~ Simpson + cwm_leafn, data = dadosreg)
 summary(mdiv.id3) # R2 = 0.57
@@ -598,8 +599,9 @@ summary(mdiv.id5) # R2 = 0.51
 vif(mdiv.id5)
 AICc(mdiv.id5) # 27.34613
 
-mdiv.id6 <- lm(log_biomass~ PC1 + PC2, data = dadosreg)
-summary(mdiv.id6) # R2 = 0.46
+mdiv.id6 <- lm(log_biomass~ Rao_phylo + Simpson, data = dadosreg)
+summary(mdiv.id6) # R2 = 0.28
+AICc(mdiv.id6) # 41.37
 
 # ---- BIC Table ----
 
@@ -1630,8 +1632,8 @@ models <- list(
   "Rao WD"           = lm(log_biomass ~ scale(Rao_WD), data = dadosreg),
   "Simpson"          = lm(log_biomass ~ scale(Simpson), data = dadosreg),
   "CWM Leaf N"       = lm(log_biomass ~ scale(cwm_leafn), data = dadosreg),
-  "PC1"              = lm(log_biomass ~ scale(PC1), data = dadosreg),
-  "PC2"              = lm(log_biomass ~ scale(PC2), data = dadosreg)
+  "PC1"              = lm(log_biomass ~ scale(PC1_CN), data = dadosreg),
+  "PC2"              = lm(log_biomass ~ scale(PC2_CN), data = dadosreg)
 )
 
 # Build dataframe for plotting
@@ -1712,7 +1714,7 @@ p_coef <- ggplot(coef_plot, aes(x = estimate, y = predictor, color = group)) +
 p_coef
 
 ggsave(
-  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/univariate_coefplot.jpeg",
+  filename = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity/univariate_coefplot_cn.jpeg",
   plot = p_coef,
   width = 7,
   height = 5.5,

@@ -18,7 +18,7 @@ functional_data <- read.csv(
 
 # Select variables
 vars_pca <- functional_data %>%
-  select(cwm_sla, cwm_ldmc, cwm_leafc, cwm_leafn, cwm_leafp, cwm_wd)
+  select(cwm_sla, cwm_ldmc, cwm_leafcn, cwm_leafp, cwm_wd)
 
 # PCA
 pca_res <- prcomp(vars_pca, scale. = TRUE)
@@ -38,8 +38,7 @@ loadings$Variable <- dplyr::recode(
   "cwm_sla"   = "SLA",
   "cwm_ldmc"  = "LDMC",
   "cwm_wd"    = "WD",
-  "cwm_leafc" = "Leaf C",
-  "cwm_leafn" = "Leaf N",
+  "cwm_leafcn" = "Leaf C:N",
   "cwm_leafp" = "Leaf P"
 )
 
@@ -89,7 +88,7 @@ p_pca
 
 # Save figure
 ggsave(
-  filename = "pca_functional_metrics.jpeg",
+  filename = "pca_functional_metrics_LeafCN.jpeg",
   plot = p_pca,
   path = "~/01 Masters_LA/06 Figures/04 Plots_Functional_Diversity",
   width = 9,
@@ -111,7 +110,7 @@ pc_scores <- pc_scores[, c("site", "PC1", "PC2")]
 # export
 write_xlsx(
   pc_scores,
-  path = "01 Datasets/03_functional_processed_data/pca_scores.xlsx"
+  path = "01 Datasets/03_functional_processed_data/pc_scores_leafcns.xlsx"
 )
 
 # ---- old ----
