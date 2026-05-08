@@ -185,7 +185,7 @@ functional_data <- read.csv(
 
 # Select variables
 vars_pca <- functional_data %>%
-  select(cwm_sla, cwm_ldmc, cwm_leafcn,cwm_wd,cwm_leafn)
+  select(cwm_sla, cwm_ldmc, cwm_leafcn,cwm_wd)
 
 # PCA
 pca_res <- prcomp(vars_pca, scale. = TRUE)
@@ -198,6 +198,26 @@ loadings <- data.frame(
   pca_res$rotation[, 1:2],
   Variable = rownames(pca_res$rotation)
 )
+
+# Scores
+
+pc_scores <- as.data.frame(pca_res$x[, 1:2])
+
+# Add to dadosreg
+
+pc_scores$plot <- unique(dadosreg$plot)
+pc_scores # check
+
+pc_scores <- pc_scores %>%
+  rename(
+    PC1_CN = PC1,
+    PC2_CN = PC2
+  )
+
+dadosreg <- left_join(dadosreg, pc_scores, by = "plot")
+
+write.csv(dadosreg,file="~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/03_functional_processed_data/dadosreg.csv",row.names = FALSE)
+
 
 # Rename variables (cleaner labels)
 loadings$Variable <- dplyr::recode(

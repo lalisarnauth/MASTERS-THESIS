@@ -564,16 +564,19 @@ summary(mid1) # R2 = 0.50
 AICc(mid1) # 30.95
 
 mid2 <- lm(log_biomass ~ PC1_CN, data = dadosreg)
-summary(mid2) # R2 =  0.10
+summary(mid2) # R2 =  0.079
 
 mid3 <- lm(log_biomass ~ PC2_CN, data = dadosreg)
-summary(mid3) # R2 =  0.03
+summary(mid3) # R2 =  0.0375
 
 mid4 <- lm(log_biomass ~ PC1_CN + PC2_CN, data = dadosreg)
-summary(mid4) # R2 =  0.14
+summary(mid4) # R2 = 0.12
 
 mid5 <- lm(log_biomass ~ cwm_leafn + cwm_leafc, data = dadosreg)
 summary(mid5) # R2 =  0.40
+
+mid5 <- lm(log_biomass ~ cwm_leafn + PC1_CN, data = dadosreg)
+summary(mid5)
 
 # Diversity and identity?
 
@@ -582,9 +585,9 @@ summary(mdiv.id) # R2 = 0.59
 vif(mdiv.id)
 AICc(mdiv.id) # 28.4
 
-mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1_CN + PC2_CN, data = dadosreg)
-summary(mdiv.id2) # R2 = 0.26
-AICc(mdiv.id2) # 43.87
+mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1_CN, data = dadosreg)
+summary(mdiv.id2) # R2 = 0.48
+AICc(mdiv.id2) # 36.02
 
 mdiv.id3 <- lm(log_biomass~ Simpson + cwm_leafn, data = dadosreg)
 summary(mdiv.id3) # R2 = 0.57
@@ -750,14 +753,14 @@ mdiv6 <- lm(log_biomass~Rao_phylo + Simpson, data = dadosreg)
 
 # Identity
 mid1 <- lm(log_biomass ~ cwm_leafn, data = dadosreg)
-mid4 <- lm(log_biomass ~ PC1 + PC2, data = dadosreg)
+mid4 <- lm(log_biomass ~ PC1_CN + PC2_CN, data = dadosreg)
 
 # Diversity + Identity
 mdiv.id  <- lm(log_biomass ~ Rao_LDMC + cwm_leafn, data = dadosreg)
-mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1, data = dadosreg)
+mdiv.id2 <- lm(log_biomass~ Rao_LDMC + PC1_CN, data = dadosreg)
 mdiv.id3 <- lm(log_biomass~ Simpson + cwm_leafn, data = dadosreg)
 mdiv.id4 <- lm(log_biomass~ Rao_phylo + cwm_leafn, data = dadosreg)
-mdiv.id5  <- lm(log_biomass ~ Rao_LDMC + Rao_WD + cwm_leafn, data = dadosreg)
+# mdiv.id5  <- lm(log_biomass ~ Rao_LDMC + Rao_WD + cwm_leafn, data = dadosreg)
 
 # Organize models
 
@@ -770,9 +773,7 @@ models <- list(
   "Rao_LDMC + CWM Leaf N"  = mdiv.id,
   "Rao_LDMC + PC1"         = mdiv.id2,
   "Simpson + CWM Leaf N"   = mdiv.id3,
-  "Rao phylo + CWM Leaf N" = mdiv.id4,
-  "Rao_LDMC + Rao_WD + CWM Leaf N" = mdiv.id5
-)
+  "Rao phylo + CWM Leaf N" = mdiv.id4)
 
 model_type <- c(
   "Rao_LDMC + Rao_WD"      = "Diversity",
@@ -783,9 +784,7 @@ model_type <- c(
   "Rao_LDMC + CWM Leaf N"  = "Diversity + Identity",
   "Rao_LDMC + PC1"         = "Diversity + Identity",
   "Simpson + CWM Leaf N"   = "Diversity + Identity",
-  "Rao phylo + CWM Leaf N" = "Diversity + Identity",
-  "Rao_LDMC + Rao_WD + CWM Leaf N" = "Diversity + Identity"
-)
+  "Rao phylo + CWM Leaf N" = "Diversity + Identity")
 
 
 # Pretty predictor names
@@ -944,7 +943,7 @@ ft
 doc <- read_docx()
 doc <- body_add_flextable(doc, ft)
 
-print(doc, target = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/02_processed_data/model_comparison_table.docx")
+print(doc, target = "~/01 Masters_LA/00 MASTERS-DATA/01 Datasets/03_functional_processed_data/model_comparison_table.docx")
 
 
 # ---- Variance partition ----
